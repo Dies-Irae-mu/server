@@ -321,21 +321,14 @@ class CmdHangout(MuxCommand):
                         session.msg(text=f"Moving to {hangout.key}...")
                 
                 # Move the character
-                self.caller.move_to(room, quiet=True)
-
-                # Make sure location is fully updated
-                self.caller.location = room
-                
-                # Force locations in ndb for all sessions to update
-                for session in self.caller.sessions.all():
-                    if session and hasattr(session, 'puppet') and session.puppet == self.caller:
-                        session.ndb._prod_location = room
-                
-                # Announce arrival to the new room
-                room.msg_contents(f"{self.caller.name} has arrived.")
-                
-                # Message to the character
-                self.caller.msg(f"You teleport to {hangout.key}.")
+                if self.caller.move_to(room, quiet=True):
+                    # Announce arrival to the new room
+                    room.msg_contents(f"{self.caller.name} has arrived.")
+                    
+                    # Message to the character
+                    self.caller.msg(f"You teleport to {hangout.key}.")
+                else:
+                    self.caller.msg("Failed to teleport to the hangout.")
                 
                 return
                 

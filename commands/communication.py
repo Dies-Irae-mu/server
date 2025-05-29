@@ -161,19 +161,12 @@ class CmdPlusIc(MuxCommand):
                 session.msg(text=f"Moving to {target_location.name}...")
             
         # Move the character to the new location
-        caller.move_to(target_location, quiet=True)
-        
-        # Make sure location is fully updated for all sessions
-        caller.location = target_location
-
-        # Force locations in ndb for all sessions to update
-        for session in caller.sessions.all():
-            if session and hasattr(session, 'puppet') and session.puppet == caller:
-                session.ndb._prod_location = target_location
-        
-        # Announce arrival at new location
-        caller.msg(f"You return to the IC area ({target_location.name}).")
-        target_location.msg_contents(f"{caller.name} has returned to the IC area.", exclude=caller)
+        if caller.move_to(target_location, quiet=True):
+            # Announce arrival at new location
+            caller.msg(f"You return to the IC area ({target_location.name}).")
+            target_location.msg_contents(f"{caller.name} has returned to the IC area.", exclude=caller)
+        else:
+            caller.msg("Failed to return to IC area.")
 
         # Clear the pre_ooc_location attribute
         caller.attributes.remove("pre_ooc_location")
@@ -233,19 +226,12 @@ class CmdPlusOoc(MuxCommand):
                 session.msg(text=f"Moving to OOC area...")
                 
         # Move the character to the new location
-        caller.move_to(ooc_nexus, quiet=True)
-        
-        # Make sure location is fully updated
-        caller.location = ooc_nexus
-        
-        # Force locations in ndb for all sessions to update
-        for session in caller.sessions.all():
-            if session and hasattr(session, 'puppet') and session.puppet == caller:
-                session.ndb._prod_location = ooc_nexus
-        
-        # Announce arrival at new location
-        caller.msg(f"You move to the OOC area.")
-        ooc_nexus.msg_contents(f"{caller.name} has entered the OOC area.", exclude=caller)
+        if caller.move_to(ooc_nexus, quiet=True):
+            # Announce arrival at new location
+            caller.msg(f"You move to the OOC area.")
+            ooc_nexus.msg_contents(f"{caller.name} has entered the OOC area.", exclude=caller)
+        else:
+            caller.msg("Failed to move to OOC area.")
 
 class CmdMeet(MuxCommand):
     """
@@ -325,20 +311,13 @@ class CmdMeet(MuxCommand):
                     session.msg(text=f"Moving to {requester.name}'s location...")
             
             # Move the character to the new location
-            caller.move_to(requester.location, quiet=True)
-            
-            # Make sure location is fully updated
-            caller.location = requester.location
-            
-            # Force locations in ndb for all sessions to update
-            for session in caller.sessions.all():
-                if session and hasattr(session, 'puppet') and session.puppet == caller:
-                    session.ndb._prod_location = requester.location
-            
-            # Announce arrival at new location
-            caller.msg(f"You accept the meet request from {requester.name} and join them.")
-            requester.msg(f"{caller.name} has accepted your meet request and joined you.")
-            requester.location.msg_contents(f"{caller.name} appears, joining {requester.name}.", exclude=[caller, requester])
+            if caller.move_to(requester.location, quiet=True):
+                # Announce arrival at new location
+                caller.msg(f"You accept the meet request from {requester.name} and join them.")
+                requester.msg(f"{caller.name} has accepted your meet request and joined you.")
+                requester.location.msg_contents(f"{caller.name} appears, joining {requester.name}.", exclude=[caller, requester])
+            else:
+                caller.msg("Failed to meet with the requester.")
             
             # Clear the meet request
             caller.ndb.meet_request = None
@@ -467,20 +446,13 @@ class CmdSummon(AdminCommand):
         old_location.msg_contents(f"{target.name} has been summoned by {caller.name}.", exclude=target)
                 
         # Move the character to the new location
-        target.move_to(caller.location, quiet=True)
-        
-        # Make sure location is fully updated
-        target.location = caller.location
-        
-        # Force locations in ndb for all sessions to update
-        for session in target.sessions.all():
-            if session and hasattr(session, 'puppet') and session.puppet == target:
-                session.ndb._prod_location = caller.location
-        
-        # Announce arrival at the new location
-        caller.msg(f"You have summoned {target.name} to your location.")
-        target.msg(f"{caller.name} has summoned you.")
-        caller.location.msg_contents(f"{target.name} appears, summoned by {caller.name}.", exclude=[caller, target])
+        if target.move_to(caller.location, quiet=True):
+            # Announce arrival at the new location
+            caller.msg(f"You have summoned {target.name} to your location.")
+            target.msg(f"{caller.name} has summoned you.")
+            caller.location.msg_contents(f"{target.name} appears, summoned by {caller.name}.", exclude=[caller, target])
+        else:
+            caller.msg("Failed to summon the target.")
 
 class CmdJoin(AdminCommand):
     """
@@ -572,19 +544,12 @@ class CmdJoin(AdminCommand):
         old_location.msg_contents(f"{caller.name} has left to join {target.name}.", exclude=caller)
 
         # Move the character to the new location
-        caller.move_to(target.location, quiet=True)
-        
-        # Make sure location is fully updated
-        caller.location = target.location
-        
-        # Force locations in ndb for all sessions to update
-        for session in caller.sessions.all():
-            if session and hasattr(session, 'puppet') and session.puppet == caller:
-                session.ndb._prod_location = target.location
-        
-        # Announce arrival at the new location
-        caller.msg(f"You have joined {target.name} at their location.")
-        target.location.msg_contents(f"{caller.name} appears in the room.", exclude=caller)
+        if caller.move_to(target.location, quiet=True):
+            # Announce arrival at the new location
+            caller.msg(f"You have joined {target.name} at their location.")
+            target.location.msg_contents(f"{caller.name} appears in the room.", exclude=caller)
+        else:
+            caller.msg("Failed to join the target.")
 
 class CmdCheckComm(AdminCommand):
     """
