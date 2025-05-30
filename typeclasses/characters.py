@@ -335,6 +335,56 @@ class Character(DefaultCharacter):
                     from evennia.utils import logger
                     logger.log_err(f"Error checking job notifications for {self.key}: {str(e)}")
 
+            # Check for BBS updates
+            if self.should_show_notification("bbs"):
+                try:
+                    from world.wod20th.utils.bbs_utils import get_or_create_bbs_controller
+                    
+                    controller = get_or_create_bbs_controller()
+                    boards = controller.db.boards
+                    
+                    if boards:
+                        # Get the character's unsubscribed boards list
+                        unsubscribed_boards = self.attributes.get("unsubscribed_bbs_boards", [])
+
+                        # Count total unread posts
+                        total_unread = 0
+                        unread_boards = []
+
+                        # Sort boards by ID
+                        sorted_boards = sorted(boards.items(), key=lambda x: x[0])
+
+                        for board_id, board in sorted_boards:
+                            if not controller.has_access(board_id, self.key):
+                                continue
+                            
+                            # Skip unsubscribed boards unless admin/builder
+                            is_admin = self.locks.check_lockstring(self, "perm(Admin)")
+                            is_builder = self.locks.check_lockstring(self, "perm(Builder)")
+                            if board_id in unsubscribed_boards and not (is_admin or is_builder):
+                                continue
+
+                            unread_posts = controller.get_unread_posts(board_id, self.key)
+                            if not unread_posts:
+                                continue
+
+                            total_unread += len(unread_posts)
+                            unread_boards.append((board['name'], len(unread_posts)))
+
+                        # Show concise output for login notification
+                        if total_unread > 0:
+                            board_summary = ", ".join(f"{name}: {count}" for name, count in unread_boards)
+                            self.msg(f"|wYou have {total_unread} unread post{'s' if total_unread != 1 else ''} "
+                                      f"on the bulletin board ({board_summary}). Use +bbs to check.|n")
+                except (ImportError, ModuleNotFoundError):
+                    # BBS module not available or not properly installed
+                    from evennia.utils import logger
+                    logger.log_info(f"BBS module not available during login notification for {self.key}")
+                except Exception as e:
+                    # Log any other errors but don't crash the login process
+                    from evennia.utils import logger
+                    logger.log_err(f"Error checking BBS notifications for {self.key}: {str(e)}")
+
     @lazy_property
     def notes(self):
         return Note.objects.filter(character=self)
