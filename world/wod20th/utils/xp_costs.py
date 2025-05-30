@@ -130,24 +130,51 @@ def calculate_ritual_cost(ritual_level: int, is_in_clan: bool = True) -> int:
     multiplier = 2 if is_in_clan else 3
     return ritual_level * multiplier
 
-def calculate_background_cost(current_rating: int, new_rating: int) -> int:
+def calculate_background_cost(current_rating: int, new_rating: int, character=None, stat_name: str = "") -> int:
     """
     Calculate XP cost for backgrounds.
-    Cost is Rating x 5 XP.
+    Default cost is 3 XP per dot, but some specific backgrounds cost 6 XP per dot.
     
     Args:
         current_rating (int): Current background rating
         new_rating (int): Desired new rating
+        character: The character object (optional)
+        stat_name (str): The name of the background (optional)
         
     Returns:
         int: Total XP cost
         
     Example:
-        5, 10, 15, 20, 25 XP
+        Most backgrounds: 3, 6, 9, 12, 15 XP
+        Special backgrounds: 6, 12, 18, 24, 30 XP
     """
-    # For backgrounds, use absolute cost (non-iterative)
-    # For example, going from 0 to 3 costs 15 XP (5 * 3), not 30 XP (5 + 10 + 15)
-    return (new_rating - current_rating) * 5
+    # Default cost per dot
+    cost_per_dot = 3
+    
+    # Check if this is a special background that costs 6 XP per dot
+    if character and stat_name:
+        # Get character's splat
+        splat = character.db.stats.get('other', {}).get('splat', {}).get('Splat', {}).get('perm', '')
+        
+        # Normalize stat name for comparison (handle case and parentheses)
+        base_stat_name = stat_name.strip()
+        if "(" in base_stat_name and ")" in base_stat_name:
+            base_stat_name = base_stat_name.split("(")[0].strip()
+        
+        # Define backgrounds that cost 6 XP per dot based on splat
+        six_xp_backgrounds = []
+        
+        if splat == 'Mage':
+            six_xp_backgrounds = ['Enhancement', 'Sanctum', 'Laboratory', 'Totem']
+        elif splat == 'Changeling':
+            six_xp_backgrounds = ['Holdings', 'Totem', 'Faerie Blood']
+        
+        # Check if this background should cost 6 XP per dot
+        if any(bg.lower() == base_stat_name.lower() for bg in six_xp_backgrounds):
+            cost_per_dot = 6
+    
+    # Calculate total cost (non-iterative)
+    return (new_rating - current_rating) * cost_per_dot
 
 def calculate_willpower_cost(current_rating: int, new_rating: int) -> int:
     """

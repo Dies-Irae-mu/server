@@ -26,10 +26,14 @@ class CmdMail(EvenniaCmdMail):
       @mail/reply <#>=<message>
                               - Replies to a message #. Prepends message to the original
                                 message text.
+      @mail/replyall <#>=<message>
+                              - Replies to all recipients of a message #. Prepends message to
+                                the original message text.
     Switches:
-      delete  - deletes a message or range of messages
-      forward - forward a received message to another object with an optional message attached.
-      reply   - Replies to a received message, appending the original message to the bottom.
+      delete   - deletes a message or range of messages
+      forward  - forward a received message to another object with an optional message attached.
+      reply    - Replies to a received message, appending the original message to the bottom.
+      replyall - Replies to all recipients of a received message, appending the original message to the bottom.
     """
     
     key = "@mail"
@@ -566,6 +570,139 @@ class CmdMail(EvenniaCmdMail):
                 self.caller.msg(f"Error replying to mail: {str(e)}")
                 return
         
+        # Case 7: Handle replyall operations
+        elif "replyall" in self.switches:
+            try:
+                # Check for valid arguments
+                if not self.lhs:
+                    self.caller.msg("You must specify a message ID to reply to.")
+                    return
+                if not self.rhs:
+                    self.caller.msg("You must include a reply message.")
+                    return
+                
+                # Get all mail messages
+                all_mail = self.get_all_mail()
+                
+                try:
+                    # Get the message to reply to
+                    mind = int(self.lhs.strip()) - 1
+                    
+                    # Validate message index
+                    if mind < 0 or mind >= len(all_mail):
+                        self.caller.msg(f"'{self.lhs}' is not a valid mail id.")
+                        return
+                    
+                    # Get the original message
+                    original_message = all_mail[mind]
+                    
+                    # Get all recipients from original message
+                    all_recipients = set()
+                    
+                    # Get original sender(s)
+                    if hasattr(original_message, 'senders'):
+                        if isinstance(original_message.senders, list):
+                            for sender in original_message.senders:
+                                all_recipients.add(sender)
+                        else:
+                            for sender in original_message.senders.all():
+                                all_recipients.add(sender)
+                    elif hasattr(original_message, 'db_sender_accounts'):
+                        for sender in original_message.db_sender_accounts.all():
+                            all_recipients.add(sender)
+                    
+                    # Get all original receivers (accounts)
+                    if hasattr(original_message, 'db_receivers_accounts'):
+                        for receiver in original_message.db_receivers_accounts.all():
+                            all_recipients.add(receiver)
+                    
+                    # Get all original receivers (objects)
+                    if hasattr(original_message, 'db_receivers_objects'):
+                        for receiver in original_message.db_receivers_objects.all():
+                            if hasattr(receiver, 'account') and receiver.account:
+                                all_recipients.add(receiver.account)
+                            else:
+                                all_recipients.add(receiver)
+                    
+                    # Remove self from recipients
+                    if self.account_caller:
+                        current_user = self.caller
+                    else:
+                        current_user = self.caller.account
+                    all_recipients.discard(current_user)
+                    
+                    if not all_recipients:
+                        self.caller.msg("Cannot determine who to reply to. No valid recipients found.")
+                        return
+                    
+                    # Create reply subject
+                    original_subject = original_message.db_header or "No Subject"
+                    reply_subject = f"RE: {original_subject}"
+                    if reply_subject.startswith("RE: RE:"):
+                        # Don't stack RE: prefixes
+                        reply_subject = original_subject
+                    
+                    # Create reply message content with original included
+                    reply_content = (
+                        f"{self.rhs.strip()}\n\n"
+                        f"---- Original Message ----\n"
+                        f"From: {self.get_sender_name(original_message)}\n"
+                        f"Subject: {original_subject}\n\n"
+                        f"{original_message.db_message}"
+                    )
+                    
+                    sender_name = self.caller
+                    # Send to all recipients
+                    if self.account_caller:
+                        sender = self.caller
+                    else:
+                        sender = self.caller.account
+                        
+                    from evennia.utils import create
+                    sent_count = 0
+                    for recipient in all_recipients:
+                        try:
+                            new_message = create.create_message(
+                                sender, 
+                                reply_content,
+                                receivers=recipient, 
+                                header=reply_subject
+                            )
+                            
+                            # Tag the message
+                            new_message.tags.add("mail", category="mail")
+                            new_message.tags.add("new", category="mail")
+                            
+                            # Notify recipient
+                            if hasattr(recipient, 'msg'):
+                                recipient.msg(f"You have received a new @mail from {sender_name}")
+                            sent_count += 1
+                        except Exception as e:
+                            logger.log_err(f"Error sending replyall to {recipient}: {str(e)}")
+                    
+                    # Mark original as replied to
+                    try:
+                        # Remove new tag if present
+                        original_message.tags.remove("new", category="mail")
+                        # Add replied tag
+                        original_message.tags.add("replied", category="mail")
+                    except Exception as e:
+                        logger.log_err(f"Error marking message as replied: {str(e)}")
+                    
+                    # Provide feedback
+                    recipient_names = [r.username if hasattr(r, 'username') else str(r) for r in all_recipients]
+                    self.caller.msg(f"Replied to all ({sent_count} recipients): {', '.join(recipient_names)}")
+                    return
+                    
+                except ValueError:
+                    self.caller.msg("Usage: @mail/replyall <message ID>=<reply text>")
+                    return
+                    
+            except Exception as e:
+                logger.log_err(f"Error in mail replyall: {str(e)}")
+                self.caller.msg(f"Error replying to all: {str(e)}")
+                return
+        
         # For all other cases, let the parent handle it
         super().func()
 
@@ -726,6 +863,36 @@ class CmdMail(EvenniaCmdMail):
                     logger.log_err(f"Error getting sender name: {str(e)}")
                     
         messageForm.append("|wFrom:|n %s" % sender_name)
+        
+        # Get and display all recipients (CC information)
+        all_recipients = []
+        
+        # Get all account receivers
+        if hasattr(message, 'db_receivers_accounts'):
+            for receiver in message.db_receivers_accounts.all():
+                if receiver != (self.caller if self.account_caller else self.caller.account):
+                    if hasattr(receiver, 'get_display_name'):
+                        all_recipients.append(receiver.get_display_name(self.caller))
+                    elif hasattr(receiver, 'username'):
+                        all_recipients.append(receiver.username)
+                    else:
+                        all_recipients.append(str(receiver))
+        
+        # Get all object receivers
+        if hasattr(message, 'db_receivers_objects'):
+            for receiver in message.db_receivers_objects.all():
+                if receiver != self.caller:
+                    if hasattr(receiver, 'get_display_name'):
+                        all_recipients.append(receiver.get_display_name(self.caller))
+                    elif hasattr(receiver, 'key'):
+                        all_recipients.append(receiver.key)
+                    else:
+                        all_recipients.append(str(receiver))
+        
+        # Display CC information if there are other recipients
+        if all_recipients:
+            cc_line = ", ".join(all_recipients)
+            messageForm.append("|wCC:|n %s" % cc_line)
         
         # Format date
         day = message.db_date_created.day
