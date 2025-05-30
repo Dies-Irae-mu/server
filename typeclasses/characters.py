@@ -945,8 +945,11 @@ class Character(DefaultCharacter):
         if stat_name not in self.db.stats[stat_type][category]:
             return 0
 
-        value = self.db.stats[stat_type][category][stat_name].get('temp' if temp else 'perm', 0)
-        return value
+        value = self.db.stats[stat_type][category][stat_name]
+        #Deal with where the value is stored as a simple data type instead of in a dictionary
+        if isinstance(value, (str, int, float)):
+            return value
+        return value.get('temp' if temp else 'perm', 0)
 
     def set_stat(self, stat_type, category, stat_name, value, temp=False):
         """Set a stat value."""

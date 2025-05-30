@@ -32,9 +32,10 @@
             // Pre-process the content
             document.addEventListener('DOMContentLoaded', function() {
                 try {
-                    // Get content data from the template
-                    const leftContentData = `{{ page.content|escapejs }}`;
-                    const rightContentData = `{{ page.right_content|escapejs }}`;
+                    // Get content data from the template 
+                    // Using template literals with proper escaping for JavaScript
+                    const leftContentData = `{{ page.content|default:""|safe|addslashes }}`;
+                    const rightContentData = `{{ page.right_content|default:""|safe|addslashes }}`;
                     
                     // Process left content
                     const leftContentElement = document.querySelector('.left_content');
