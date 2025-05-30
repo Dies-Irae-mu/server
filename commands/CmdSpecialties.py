@@ -141,7 +141,7 @@ class CmdSpecialties(MuxCommand):
             if main_category in stats:
                 for subcategory, abilities in stats[main_category].items():
                     for ability_name, ability_data in abilities.items():
-                        value = ability_data.get('perm', 0)  # Use permanent value
+                        value = int(ability_data.get('perm', 0))  # Use permanent value
                         # Check if ability requires a specialty
                         if value > 0 and ability_name in REQUIRED_SPECIALTIES:
                             if ability_name.lower() not in specialties or not specialties[ability_name.lower()]:

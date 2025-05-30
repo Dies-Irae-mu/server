@@ -776,7 +776,7 @@ def validate_mortalplus_backgrounds(character, background_name: str, value: str)
     except ValueError:
         return False, "Background values must be numbers"
 
-def update_mortalplus_pools_on_stat_change(character, stat_name: str, new_value: str) -> None:
+def update_mortalplus_pools_on_stat_change(character, stat_name: str, new_value: any) -> None:
     """
     Update mortalplus pools and resources when relevant stats change.
     
@@ -787,8 +787,9 @@ def update_mortalplus_pools_on_stat_change(character, stat_name: str, new_value:
     """
     stat_name = stat_name.lower()
     
+    new_value_string = str(new_value)
     # Convert mortalplus_type to proper case
-    proper_type = next((t[1] for t in MORTALPLUS_TYPE_CHOICES if t[0].lower() == new_value.lower()), new_value)
+    proper_type = next((t[1] for t in MORTALPLUS_TYPE_CHOICES if t[0].lower() == new_value_string.lower()), new_value_string)
     
     # Handle Type changes - only update pools and banality, don't reinitialize
     if stat_name == 'type':
