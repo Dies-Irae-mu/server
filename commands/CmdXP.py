@@ -300,13 +300,19 @@ class CmdXP(default_cmds.MuxCommand):
                     # Special handling for Kinfolk Gnosis
                     if stat_name.lower() == "gnosis":
                         # Check if this is a Kinfolk character
-                        is_kinfolk = (target.db.stats.get('other', {}).get('splat', {}).get('Splat', {}).get('perm', '') == 'Mortal+' and 
-                                    target.db.stats.get('identity', {}).get('lineage', {}).get('Type', {}).get('perm', '') == 'Kinfolk')
+                        splat = self.caller.db.stats.get('other', {}).get('splat', {}).get('Splat', {}).get('perm', '')
+                        char_type = self.caller.db.stats.get('identity', {}).get('lineage', {}).get('Type', {}).get('perm', '')
+                        
+                        # Only treat as Merit if BOTH conditions are true: Mortal+ splat AND Kinfolk type
+                        is_kinfolk = (splat == 'Mortal+' and char_type == 'Kinfolk')
                         
                         if is_kinfolk:
-                            logger.log_info(f"Target is Kinfolk, treating Gnosis as a Merit")
+                            logger.log_info(f"Target is Kinfolk (splat: {splat}, type: {char_type}), treating Gnosis as a Merit")
                             category = "merits"
                             subcategory = "supernatural"
+                        else:
+                            # For non-Kinfolk characters (including Shifters), log that we're using normal Gnosis processing
+                            logger.log_info(f"Target is not Kinfolk (splat: {splat}, type: {char_type}), using normal Gnosis processing as pools/dual")
                     
                     if not category or not subcategory:
                         self.caller.msg(f"Could not determine stat category for '{stat_name}'.")
@@ -628,68 +634,72 @@ class CmdXP(default_cmds.MuxCommand):
                     if stat_name.lower() == "gnosis":
                         # Check if the target is a Kinfolk
                         splat = target.get_stat('other', 'splat', 'Splat', temp=False)
-                        if splat == 'Mortal+':
-                            char_type = target.get_stat('identity', 'lineage', 'Type', temp=False)
-                            if char_type == 'Kinfolk':
-                                logger.log_info(f"Target is Kinfolk, treating Gnosis as a Merit")
-                                # Very important: Change the category and subcategory for a Kinfolk
-                                category = 'merits'
-                                subcategory = 'supernatural'
-                                logger.log_info(f"Updated category to {category}, subcategory to {subcategory}")
-                                
-                                # Get current rating of the Gnosis merit
-                                current_rating = target.get_stat(category, subcategory, stat_name, temp=False) or 0
-                                logger.log_info(f"Current rating: {current_rating}")
-                                
-                                # Only proceed if there's an actual increase in rating
-                                if new_rating <= current_rating:
-                                    self.caller.msg(f"No increase needed. Current rating is already {current_rating}.")
-                                    return
-                                
-                                # Calculate merit cost (5 XP per dot)
-                                cost = (new_rating - current_rating) * 5
-                                
-                                # Check if character has enough XP
-                                if target.db.xp['current'] < cost:
-                                    self.caller.msg(f"Not enough XP. Cost: {cost}, Available: {target.db.xp['current']}")
-                                    return
-                                
-                                # Calculate the Gnosis pool value (merit rating - 4)
-                                gnosis_pool = max(0, new_rating - 4)
-                                
-                                # Update the merit
-                                target.set_stat('merits', 'supernatural', 'Gnosis', new_rating, temp=False)
-                                target.set_stat('merits', 'supernatural', 'Gnosis', new_rating, temp=True)
-                                
-                                # Update the pool
-                                target.set_stat('pools', 'dual', 'Gnosis', gnosis_pool, temp=False)
-                                target.set_stat('pools', 'dual', 'Gnosis', gnosis_pool, temp=True)
-                                
-                                # Deduct XP
-                                target.db.xp['current'] -= cost
-                                target.db.xp['spent'] += cost
-                                
-                                # Log the spend with stat information
-                                spend_entry = {
-                                    'type': 'spend',
-                                    'amount': float(cost),
-                                    'stat_name': 'Gnosis (Merit)',
-                                    'previous_rating': current_rating,
-                                    'new_rating': new_rating,
-                                    'reason': reason,
-                                    'timestamp': datetime.now().isoformat()
-                                }
-                                
-                                if 'spends' not in target.db.xp:
-                                    target.db.xp['spends'] = []
-                                target.db.xp['spends'].insert(0, spend_entry)
-                                
-                                # Report success
-                                self.caller.msg(f"Successfully set {target.name}'s Gnosis merit to {new_rating} and Gnosis pool to {gnosis_pool}. Cost: {cost} XP.")
-                                target.msg(f"{self.caller.name} has set your Gnosis merit to {new_rating} and Gnosis pool to {gnosis_pool}. Cost: {cost} XP.")
-                                
-                                # No need to continue with the regular process_xp_spend function
+                        char_type = target.get_stat('identity', 'lineage', 'Type', temp=False)
+                        
+                        # Only treat as Merit if BOTH conditions are true: Mortal+ splat AND Kinfolk type
+                        if splat == 'Mortal+' and char_type == 'Kinfolk':
+                            logger.log_info(f"Target is Kinfolk (splat: {splat}, type: {char_type}), treating Gnosis as a Merit")
+                            # Very important: Change the category and subcategory for a Kinfolk
+                            category = 'merits'
+                            subcategory = 'supernatural'
+                            logger.log_info(f"Updated category to {category}, subcategory to {subcategory}")
+                            
+                            # Get current rating of the Gnosis merit
+                            current_rating = target.get_stat(category, subcategory, stat_name, temp=False) or 0
+                            logger.log_info(f"Current rating: {current_rating}")
+                            
+                            # Only proceed if there's an actual increase in rating
+                            if new_rating <= current_rating:
+                                self.caller.msg(f"No increase needed. Current rating is already {current_rating}.")
                                 return
+                            
+                            # Calculate merit cost (5 XP per dot)
+                            cost = (new_rating - current_rating) * 5
+                            
+                            # Check if character has enough XP
+                            if target.db.xp['current'] < cost:
+                                self.caller.msg(f"Not enough XP. Cost: {cost}, Available: {target.db.xp['current']}")
+                                return
+                            
+                            # Calculate the Gnosis pool value (merit rating - 4)
+                            gnosis_pool = max(0, new_rating - 4)
+                            
+                            # Update the merit
+                            target.set_stat('merits', 'supernatural', 'Gnosis', new_rating, temp=False)
+                            target.set_stat('merits', 'supernatural', 'Gnosis', new_rating, temp=True)
+                            
+                            # Update the pool
+                            target.set_stat('pools', 'dual', 'Gnosis', gnosis_pool, temp=False)
+                            target.set_stat('pools', 'dual', 'Gnosis', gnosis_pool, temp=True)
+                            
+                            # Deduct XP
+                            target.db.xp['current'] -= cost
+                            target.db.xp['spent'] += cost
+                            
+                            # Log the spend with stat information
+                            spend_entry = {
+                                'type': 'spend',
+                                'amount': float(cost),
+                                'stat_name': 'Gnosis (Merit)',
+                                'previous_rating': current_rating,
+                                'new_rating': new_rating,
+                                'reason': reason,
+                                'timestamp': datetime.now().isoformat()
+                            }
+                            
+                            if 'spends' not in target.db.xp:
+                                target.db.xp['spends'] = []
+                            target.db.xp['spends'].insert(0, spend_entry)
+                            
+                            # Report success
+                            self.caller.msg(f"Successfully set {target.name}'s Gnosis merit to {new_rating} and Gnosis pool to {gnosis_pool}. Cost: {cost} XP.")
+                            target.msg(f"{self.caller.name} has set your Gnosis merit to {new_rating} and Gnosis pool to {gnosis_pool}. Cost: {cost} XP.")
+                            
+                            # No need to continue with the regular process_xp_spend function
+                            return
+                        else:
+                            # For non-Kinfolk characters (including Shifters), log that we're using normal Gnosis processing
+                            logger.log_info(f"Target is not Kinfolk (splat: {splat}, type: {char_type}), using normal Gnosis processing as pools/dual")
                     
                     # Fix case-sensitivity: Get proper case for the stat name
                     if hasattr(target, 'get_proper_stat_name'):
