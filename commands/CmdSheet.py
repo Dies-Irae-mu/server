@@ -1601,6 +1601,10 @@ class CmdSheet(MuxCommand):
         for category in character.db.stats:
             for stat_type in character.db.stats[category]:
                 if stat_name in character.db.stats[category][stat_type]:
+                    value = character.db.stats[category][stat_type][stat_name]
+                    if isinstance(value, (str, int, float)):
+                        return value
+                    return value.get('perm', None)
                     return character.db.stats[category][stat_type][stat_name].get('perm', None)
                     
         return None
