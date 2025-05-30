@@ -1452,9 +1452,11 @@ class CmdSheet(MuxCommand):
             # Get Renown values from advantages.renown
             renown_values = character.db.stats.get('advantages', {}).get('renown', {})
             for renown_type, values in sorted(renown_values.items()):
-                value = values.get('perm', 0)
+                perm_value = values.get('perm', 0)
                 temp_value = values.get('temp', 0)
-                self.virtues_list.append(format_stat(renown_type, value, width=25, tempvalue=temp_value))
+                # Always show temp/perm format for renown
+                renown_display = f"{temp_value}/{perm_value}"
+                self.virtues_list.append(format_stat(renown_type, renown_display, width=25))
 
         # Handle Changeling virtues and special stats
         elif splat == 'Changeling':

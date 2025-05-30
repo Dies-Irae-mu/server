@@ -1668,7 +1668,16 @@ class CmdStats(MuxCommand):
             
             # Set the main stat values, then handle special cases
             self.target.set_stat(category, stat_type, stat_name, value, temp=False)
-            self.target.set_stat(category, stat_type, stat_name, value, temp=True)
+
+            # For advantages.renown, don't set the temporary value
+            if category == 'advantages' and stat_type == 'renown':
+                # Renown temp values are managed through +renown command, not set here
+                original_caller.msg(f"|gSet permanent {stat_name} Renown to {value} for {self.target.name}.|n")
+                if self.target != self.caller:
+                    self.target.msg(f"|g{original_caller.name} set your permanent {stat_name} Renown to {value}.|n")
+            else:
+                # For all other stats, set the temporary value too
+                self.target.set_stat(category, stat_type, stat_name, value, temp=True)
             
             # If this was a gift alias and we've already handled the database storage, make sure the gift_aliases attribute is set correctly
             if category == 'powers' and stat_type == 'gift' and hasattr(self, 'alias_used') and self.alias_used:

@@ -2159,321 +2159,70 @@ class CmdXPCost(default_cmds.MuxCommand):
             right_dashes = total_dash_count - left_dashes
             output += f"| {'-' * left_dashes}{colored_title}{'-' * right_dashes} |\n"
             
-            # Get all gifts - then filter for level 1 manually to handle database backend limitations
+            # Get all gifts from the database
             all_gifts = Stat.objects.filter(
                 category='powers',
                 stat_type='gift'
             )
             
-            # Special query for aspect-specific gifts
-            aspect_gifts = []
-            if shifter_type and aspect:
-                # Try to find any gifts specifically for this aspect
-                aspect_specific = Stat.objects.filter(
-                    category='powers',
-                    stat_type='gift',
-                    auspice__iexact=aspect
-                )
-                
-                if aspect_specific:
-                    logger.log_info(f"Found {len(aspect_specific)} aspect-specific gifts for {aspect}")
-                    for gift in aspect_specific:
-                        # Check if it's a level 1 gift
-                        has_level_1 = False
-                        if hasattr(gift, 'values'):
-                            if isinstance(gift.values, (list, tuple)):
-                                has_level_1 = 1 in gift.values
-                            elif isinstance(gift.values, dict):
-                                # If it's a dictionary, check if 1 is a key or in values
-                                has_level_1 = 1 in gift.values.keys() or 1 in gift.values.values()
-                            elif isinstance(gift.values, str) and '[' in gift.values:
-                                # Handle JSON string representation
-                                try:
-                                    import json
-                                    values_list = json.loads(gift.values.replace("'", '"'))
-                                    has_level_1 = 1 in values_list
-                                except:
-                                    # If can't parse, try a simple check
-                                    has_level_1 = '1' in gift.values
-                            else:
-                                # Handle single value
-                                try:
-                                    has_level_1 = int(gift.values) == 1
-                                except:
-                                    has_level_1 = False
-                        
-                        # Also check rank field if available
-                        if not has_level_1 and hasattr(gift, 'rank'):
-                            try:
-                                has_level_1 = int(gift.rank) == 1
-                            except:
-                                pass
-                        
-                        if has_level_1:
-                            # Mark as general gift for proper pricing (3 XP)
-                            gift.match_type = 'auspice'
-                            logger.log_info(f"Adding aspect-specific gift: {gift.name}")
-                            aspect_gifts.append(gift)
-            
-            # Log some debug info
-            #character.msg(f"DEBUG: Shifter Type: {shifter_type}, Breed: {breed}, Tribe: {tribe}, Auspice: {auspice}, Aspect: {aspect}")
-            #character.msg(f"DEBUG: Effective Breed: {effective_breed}, Effective Tribe: {effective_tribe}, Effective Auspice: {effective_auspice}")
-            
             # Get general gifts for this shifter type
             general_gifts = GENERAL_SHIFTER_GIFTS.get(shifter_type, [])
             
-            # Filter gifts for this character manually
+            # Filter gifts for this character
             available_gifts = []
-            general_gift_objects = []
             
-            # First collect general gifts from the database
-            if general_gifts:
-                for gift_name in general_gifts:
-                    # Skip if already known
-                    if gift_name in current_gifts:
-                        continue
-                        
-                    # Try to find the gift in the database
-                    gift_match = None
-                    for gift in all_gifts:
-                        if gift.name.lower() == gift_name.lower():
-                            gift_match = gift
-                            break
-                    
-                    if gift_match:
-                        # Check if it's a level 1 gift
-                        has_level_1 = False
-                        if hasattr(gift_match, 'values'):
-                            if isinstance(gift_match.values, (list, tuple)):
-                                has_level_1 = 1 in gift_match.values
-                            elif isinstance(gift_match.values, str) and '[' in gift_match.values:
-                                # Handle JSON string representation
-                                try:
-                                    import json
-                                    values_list = json.loads(gift_match.values.replace("'", '"'))
-                                    has_level_1 = 1 in values_list
-                                except:
-                                    # If can't parse, try a simple check
-                                    has_level_1 = '1' in gift_match.values
-                            else:
-                                # Handle single value
-                                try:
-                                    has_level_1 = int(gift_match.values) == 1
-                                except:
-                                    has_level_1 = False
-                        
-                        # Also check rank field if available
-                        if not has_level_1 and hasattr(gift_match, 'rank'):
-                            try:
-                                has_level_1 = int(gift_match.rank) == 1
-                            except:
-                                pass
-                        
-                        if has_level_1:
-                            # Mark as general gift for proper pricing (3 XP)
-                            gift_match.is_general_gift = True
-                            general_gift_objects.append(gift_match)
+            # Import shifter gift restrictions
+            from world.wod20th.utils.shifter_gift_restrictions import SHIFTER_GIFT_RESTRICTIONS
             
-            # Now process regular gifts from the database
+            # Process all gifts from the database
             for gift in all_gifts:
-                # Check if it's a level 1 gift
-                has_level_1 = False
-                if hasattr(gift, 'values'):
-                    if isinstance(gift.values, (list, tuple)):
-                        has_level_1 = 1 in gift.values
-                    elif isinstance(gift.values, str) and '[' in gift.values:
-                        # Handle JSON string representation
-                        try:
-                            import json
-                            values_list = json.loads(gift.values.replace("'", '"'))
-                            has_level_1 = 1 in values_list
-                        except:
-                            # If can't parse, try a simple check
-                            has_level_1 = '1' in gift.values
-                    else:
-                        # Handle single value
-                        try:
-                            has_level_1 = int(gift.values) == 1
-                        except:
-                            has_level_1 = False
-                
-                # Skip if not a level 1 gift
-                if not has_level_1:
-                    continue
-                
-                # Check for shifter-specific level restrictions
-                from world.wod20th.utils.xp_utils import SHIFTER_GIFT_RESTRICTIONS
-                if gift.name in SHIFTER_GIFT_RESTRICTIONS and shifter_type in SHIFTER_GIFT_RESTRICTIONS[gift.name]:
-                    min_level = SHIFTER_GIFT_RESTRICTIONS[gift.name][shifter_type]
-                    
-                    # Handle case where min_level is a dictionary (for aspect-specific restrictions)
-                    if isinstance(min_level, dict):
-                        # If aspect is specified, check if it's in the dictionary
-                        if aspect and aspect in min_level:
-                            min_level = min_level[aspect]
-                        elif auspice and auspice in min_level:
-                            min_level = min_level[auspice]
-                        else:
-                            # No matching aspect/auspice, default to level 1
-                            min_level = 1
-                    
-                    if min_level > 1:
-                        # Skip this gift if it's restricted to a higher level for this shifter type
-                        logger.log_info(f"Skipping {gift.name} for {shifter_type} - requires level {min_level} minimum")
-                        continue
-                
                 # Skip if already known
                 if gift.name in current_gifts:
                     continue
                 
-                # Skip if it's already in the general gifts list
-                if any(g.name == gift.name for g in general_gift_objects):
-                    continue
-                
-                # Initialize match flags for this gift
-                gift_match = False
-                is_breed_gift = False
-                is_auspice_gift = False
-                is_tribe_gift = False
-                
-                # 1. Check shifter type compatibility
+                # 1. Check shifter type compatibility first
                 if hasattr(gift, 'shifter_type') and gift.shifter_type:
                     allowed_types = self._ensure_list(gift.shifter_type)
                     if not any(shifter_type.lower() in t.lower() for t in allowed_types):
                         continue  # Skip if shifter type doesn't match
                 
-                # 2. Check breed match
-                if hasattr(gift, 'breed') and gift.breed:
-                    allowed_breeds = self._ensure_list(gift.breed)
-                    if effective_breed and any(effective_breed.lower() in b.lower() for b in allowed_breeds):
-                        gift_match = True
-                        is_breed_gift = True
-                        gift.match_type = 'breed'  # Mark the match type for display
+                # 2. Determine the appropriate level for this gift and shifter type
+                available_level = self._get_gift_level_for_shifter(gift, shifter_type, effective_breed, effective_tribe, effective_auspice, aspect)
                 
-                # 3. Check auspice/aspect match
-                if hasattr(gift, 'auspice') and gift.auspice:
-                    allowed_auspices = self._ensure_list(gift.auspice)
-                    # For more efficient logging, only log if in debug mode
-                    logger.log_info(f"Checking gift {gift.name} with auspices {allowed_auspices} against character's {effective_auspice}")
-                    
-                    # Use multiple matching methods to ensure compatibility with different data formats
-                    if effective_auspice:
-                        # Try exact match first (most precise)
-                        exact_match = any(effective_auspice.lower() == a.lower().strip() for a in allowed_auspices)
-                        
-                        # If no exact match, try contains match (more flexible)
-                        contains_match = any(effective_auspice.lower() in a.lower() or a.lower() in effective_auspice.lower() for a in allowed_auspices)
-                        
-                        # For certain shifter types, we need to be more flexible with matching
-                        special_match = False
-                        if shifter_type in ['Ratkin', 'Bastet', 'Ajaba', 'Corax'] and aspect:
-                            special_match = any(aspect.lower() == a.lower().strip() for a in allowed_auspices)
-                            
-                        if exact_match or contains_match or special_match:
-                            gift_match = True
-                            is_auspice_gift = True
-                            gift.match_type = 'auspice'  # Mark the match type for display
+                # Skip if no valid level found
+                if available_level is None:
+                    continue
                 
-                # 4. Check tribe match
-                if hasattr(gift, 'tribe') and gift.tribe:
-                    allowed_tribes = self._ensure_list(gift.tribe)
-                    logger.log_info(f"Checking gift {gift.name} with tribes {allowed_tribes} against character's {effective_tribe}")
-                    
-                    if effective_tribe:
-                        # Try both exact and flexible matching for tribes
-                        exact_match = any(effective_tribe.lower() == t.lower().strip() for t in allowed_tribes)
-                        contains_match = any(effective_tribe.lower() in t.lower() or t.lower() in effective_tribe.lower() for t in allowed_tribes)
-                        
-                        # Special case for shifter types
-                        special_match = False
-                        if shifter_type:
-                            special_match = any(shifter_type.lower() == t.lower().strip() for t in allowed_tribes)
-                            
-                        if exact_match or contains_match or special_match:
-                            gift_match = True
-                            is_tribe_gift = True
-                            gift.match_type = 'tribe'  # Mark the match type for display
+                # 3. Determine gift match type for pricing
+                gift_match_type = self._determine_gift_match_type(gift, shifter_type, effective_breed, effective_tribe, effective_auspice, general_gifts)
                 
-                # 5. If it's a general gift without specific breed/auspice/tribe requirements
-                if (not hasattr(gift, 'breed') or not gift.breed) and \
-                   (not hasattr(gift, 'auspice') or not gift.auspice) and \
-                   (not hasattr(gift, 'tribe') or not gift.tribe):
-                    gift_match = True
-                    gift.match_type = 'general'  # Mark as general gift
-                
-                # If it matches, add to available gifts
-                if gift_match:
-                    available_gifts.append(gift)
-            
-            # Add the general gifts to the available gifts list
-            available_gifts.extend(general_gift_objects)
-            
-            # Add the aspect-specific gifts
-            available_gifts.extend(aspect_gifts)
+                # Add to available gifts with metadata
+                gift.available_level = available_level
+                gift.match_type = gift_match_type
+                available_gifts.append(gift)
             
             # Display available gifts
             gifts_shown = False
             for gift in sorted(available_gifts, key=lambda g: g.name):
-                # Determine gift type based on marked match_type
-                is_breed_gift = hasattr(gift, 'match_type') and gift.match_type == 'breed'
-                is_auspice_gift = hasattr(gift, 'match_type') and gift.match_type == 'auspice'  
-                is_tribe_gift = hasattr(gift, 'match_type') and gift.match_type == 'tribe'
+                # Get the gift's available level and match type
+                available_level = gift.available_level
+                match_type = gift.match_type
                 
-                # Check if this is a general gift from the GENERAL_SHIFTER_GIFTS list
-                is_general_gift = hasattr(gift, 'is_general_gift') and gift.is_general_gift
-                
-                is_breed_tribe_auspice = is_breed_gift or is_auspice_gift or is_tribe_gift or is_general_gift
-                
-                is_special = self._is_special_gift_stat(gift)
-                
-                # Calculate cost
-                if is_special:
-                    cost = 14  # Level 1 special gift
-                elif is_breed_tribe_auspice:
-                    cost = 3    # Level 1 breed/tribe/auspice gift
+                # Calculate cost based on match type
+                if self._is_special_gift_stat(gift):
+                    cost = available_level * 7  # Special gifts (Croatan, Planetary, etc.)
+                elif match_type in ['breed', 'tribe', 'auspice', 'general']:
+                    cost = available_level * 3  # In-breed/tribe/auspice gifts
                 else:
-                    cost = 5    # Level 1 out-of-breed/tribe/auspice gift
+                    cost = available_level * 5  # Out-of-breed/tribe/auspice gifts
                 
                 # Level 1 gifts don't require approval
-                requires_approval = False
+                requires_approval = (available_level > 1)
                 status = self._get_affordable_status(cost, current_xp, requires_approval)
                 
-                # Add an indicator for breed/tribe/auspice gifts
-                if is_breed_tribe_auspice:
-                    # Add a category indicator to show why it's a match
-                    if is_general_gift or (hasattr(gift, 'match_type') and gift.match_type == 'general'):
-                        gift_display = f"  {gift.name}"  # General gift (indented)
-                    elif is_breed_gift or (hasattr(gift, 'match_type') and gift.match_type == 'breed'):
-                        gift_display = f"  {gift.name} [Breed]"
-                    elif is_auspice_gift or (hasattr(gift, 'match_type') and gift.match_type == 'auspice'):
-                        # Handle the different names for auspice-equivalents based on shifter type
-                        if shifter_type == 'Ratkin' and aspect:
-                            gift_display = f"  {gift.name} [Aspect: {aspect}]"
-                        elif shifter_type == 'Bastet' and aspect:
-                            gift_display = f"  {gift.name} [Bastet Type: {aspect}]"
-                        elif shifter_type == 'Ajaba' and aspect:
-                            gift_display = f"  {gift.name} [Camp: {aspect}]"
-                        elif shifter_type == 'Corax' and aspect:
-                            gift_display = f"  {gift.name} [Specialty: {aspect}]"
-                        elif aspect:
-                            gift_display = f"  {gift.name} [Aspect: {aspect}]"
-                        else:
-                            gift_display = f"  {gift.name} [Auspice]"
-                    elif is_tribe_gift or (hasattr(gift, 'match_type') and gift.match_type == 'tribe'):
-                        if shifter_type == 'Ananasi' and aspect and shifter_info.get('aspects_to_tribes', {}).get(aspect, False):
-                            gift_display = f"  {gift.name} [Aspect]"
-                        else:
-                            gift_display = f"  {gift.name} [Tribe]"
-                    else:
-                        # Check if it's a general gift for this shifter type
-                        from world.wod20th.utils.xp_utils import GENERAL_SHIFTER_GIFTS
-                        if shifter_type and hasattr(gift, 'name') and gift.name in GENERAL_SHIFTER_GIFTS.get(shifter_type, []):
-                            gift_display = f"  {gift.name} [General {shifter_type}]"
-                        else:
-                            gift_display = f"  {gift.name}"
-                else:
-                    gift_display = gift.name
-                    
+                # Format gift display name with category indicator
+                gift_display = self._format_gift_display_name(gift, match_type, shifter_type, aspect)
+                
                 # Format the gift entry with wider name column
                 # Truncate name if too long
                 display_name = gift_display
@@ -2597,20 +2346,18 @@ class CmdXPCost(default_cmds.MuxCommand):
                 affiliations.append(auspice)
             if aspect:
                 affiliations.append(aspect)
-            if faction:
-                affiliations.append(faction)
-                
+            
             if affiliations:
-                affiliations_text = f"Your affiliations: {', '.join(affiliations)}"
-                affiliations_visible_length = len(affiliations_text)
-                affiliations_padding = total_width - 4 - affiliations_visible_length
-                output += f"| {affiliations_text}{' ' * affiliations_padding} |\n"
+                affiliation_text = f"Your affiliations: {', '.join(affiliations)}"
+                affiliation_visible_length = len(affiliation_text)
+                affiliation_padding = total_width - 4 - affiliation_visible_length
+                output += f"| {affiliation_text}{' ' * affiliation_padding} |\n"
         
-        # Add footer
+        # Add final border
         output += table_base['format_border']()
         
         return output
-        
+
     def _is_breed_tribe_auspice_gift(self, gift_name, breed, tribe, auspice, shifter_type):
         """
         Check if a gift belongs to the character's breed, tribe, or auspice.
@@ -3386,3 +3133,158 @@ class CmdXPCost(default_cmds.MuxCommand):
         output += table_base['format_border']()
         
         return output
+
+    def _get_gift_level_for_shifter(self, gift, shifter_type, effective_breed, effective_tribe, effective_auspice, aspect):
+        """
+        Determine the appropriate level for a gift based on shifter type and restrictions.
+        Returns the level if available, None if not available.
+        """
+        # Import shifter gift restrictions
+        from world.wod20th.utils.shifter_gift_restrictions import SHIFTER_GIFT_RESTRICTIONS
+        
+        # Get available levels for this gift
+        available_levels = []
+        if hasattr(gift, 'values'):
+            if isinstance(gift.values, (list, tuple)):
+                available_levels = [int(v) for v in gift.values if str(v).isdigit()]
+            elif isinstance(gift.values, str) and '[' in gift.values:
+                # Handle JSON string representation
+                try:
+                    import json
+                    values_list = json.loads(gift.values.replace("'", '"'))
+                    available_levels = [int(v) for v in values_list if str(v).isdigit()]
+                except:
+                    # If can't parse, try a simple check
+                    if '1' in gift.values:
+                        available_levels = [1]
+            else:
+                # Handle single value
+                try:
+                    available_levels = [int(gift.values)]
+                except:
+                    available_levels = []
+        
+        # Also check rank field if available and no values found
+        if not available_levels and hasattr(gift, 'rank'):
+            try:
+                available_levels = [int(gift.rank)]
+            except:
+                pass
+        
+        # If no levels found, skip this gift
+        if not available_levels:
+            return None
+        
+        # Check for shifter-specific level restrictions
+        if gift.name in SHIFTER_GIFT_RESTRICTIONS and shifter_type in SHIFTER_GIFT_RESTRICTIONS[gift.name]:
+            min_level = SHIFTER_GIFT_RESTRICTIONS[gift.name][shifter_type]
+            
+            # Handle case where min_level is a dictionary (for aspect-specific restrictions)
+            if isinstance(min_level, dict):
+                # If aspect is specified, check if it's in the dictionary
+                if aspect and aspect in min_level:
+                    min_level = min_level[aspect]
+                elif effective_auspice and effective_auspice in min_level:
+                    min_level = min_level[effective_auspice]
+                else:
+                    # No matching aspect/auspice, use the minimum available level
+                    min_level = min(available_levels)
+            
+            # Filter available levels to only those at or above the minimum
+            valid_levels = [level for level in available_levels if level >= min_level]
+            if not valid_levels:
+                return None  # No valid levels for this shifter type
+            
+            # Return the lowest valid level
+            return min(valid_levels)
+        else:
+            # No restrictions, return the lowest available level
+            return min(available_levels)
+    
+    def _determine_gift_match_type(self, gift, shifter_type, effective_breed, effective_tribe, effective_auspice, general_gifts):
+        """
+        Determine the match type for a gift (breed, tribe, auspice, general, or out-of-affiliation).
+        This determines the XP cost multiplier.
+        """
+        # Check if it's in the general gifts list for this shifter type
+        if gift.name in general_gifts:
+            return 'general'
+        
+        # Check breed match
+        if hasattr(gift, 'breed') and gift.breed:
+            allowed_breeds = self._ensure_list(gift.breed)
+            if effective_breed and any(effective_breed.lower() in b.lower() for b in allowed_breeds):
+                return 'breed'
+        
+        # Check auspice/aspect match
+        if hasattr(gift, 'auspice') and gift.auspice:
+            allowed_auspices = self._ensure_list(gift.auspice)
+            if effective_auspice:
+                # Try exact match first (most precise)
+                exact_match = any(effective_auspice.lower() == a.lower().strip() for a in allowed_auspices)
+                # If no exact match, try contains match (more flexible)
+                contains_match = any(effective_auspice.lower() in a.lower() or a.lower() in effective_auspice.lower() for a in allowed_auspices)
+                
+                if exact_match or contains_match:
+                    return 'auspice'
+        
+        # Check tribe match
+        if hasattr(gift, 'tribe') and gift.tribe:
+            allowed_tribes = self._ensure_list(gift.tribe)
+            if effective_tribe:
+                # Try both exact and flexible matching for tribes
+                exact_match = any(effective_tribe.lower() == t.lower().strip() for t in allowed_tribes)
+                contains_match = any(effective_tribe.lower() in t.lower() or t.lower() in effective_tribe.lower() for t in allowed_tribes)
+                
+                # Special case for shifter types that use their type as tribe
+                special_match = False
+                if shifter_type:
+                    special_match = any(shifter_type.lower() == t.lower().strip() for t in allowed_tribes)
+                    
+                if exact_match or contains_match or special_match:
+                    return 'tribe'
+        
+        # If it's a general gift without specific breed/auspice/tribe requirements
+        if (not hasattr(gift, 'breed') or not gift.breed) and \
+           (not hasattr(gift, 'auspice') or not gift.auspice) and \
+           (not hasattr(gift, 'tribe') or not gift.tribe):
+            return 'general'
+        
+        # Default to out-of-affiliation
+        return 'out-of-affiliation'
+    
+    def _format_gift_display_name(self, gift, match_type, shifter_type, aspect):
+        """
+        Format the display name for a gift with appropriate category indicators.
+        """
+        base_name = gift.name
+        
+        # Add category indicator based on match type
+        if match_type in ['breed', 'tribe', 'auspice', 'general']:
+            # Add a category indicator to show why it's a match
+            if match_type == 'general':
+                return f"  {base_name}"  # General gift (indented)
+            elif match_type == 'breed':
+                return f"  {base_name} [Breed]"
+            elif match_type == 'auspice':
+                # Handle the different names for auspice-equivalents based on shifter type
+                if shifter_type == 'Ratkin' and aspect:
+                    return f"  {base_name} [Aspect: {aspect}]"
+                elif shifter_type == 'Bastet' and aspect:
+                    return f"  {base_name} [Bastet Type: {aspect}]"
+                elif shifter_type == 'Ajaba' and aspect:
+                    return f"  {base_name} [Camp: {aspect}]"
+                elif shifter_type == 'Corax' and aspect:
+                    return f"  {base_name} [Specialty: {aspect}]"
+                elif aspect:
+                    return f"  {base_name} [Aspect: {aspect}]"
+                else:
+                    return f"  {base_name} [Auspice]"
+            elif match_type == 'tribe':
+                if shifter_type == 'Ananasi' and aspect:
+                    return f"  {base_name} [Aspect]"
+                else:
+                    return f"  {base_name} [Tribe]"
+        
+        # Out-of-affiliation gifts are not indented
+        return base_name
