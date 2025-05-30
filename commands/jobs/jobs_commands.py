@@ -71,6 +71,7 @@ class CmdJobs(MuxCommand):
       LING   - Changeling requests
       MAGE   - Mage requests
       EQUIP  - Equipment requests
+      INFL   - Influence requests
     """
 
     key = "+jobs"
@@ -441,7 +442,7 @@ class CmdJobs(MuxCommand):
         # Validate category - make case-insensitive comparison
         valid_categories = ["REQ", "BUG", "PLOT", "BUILD", "MISC", "XP", 
                           "PRP", "VAMP", "SHIFT", "MORT", "POSS", "COMP", 
-                          "LING", "MAGE", "EQUIP"]
+                          "LING", "MAGE", "EQUIP", "INFL"]
         
         if category not in valid_categories:
             self.caller.msg(f"Invalid category. Valid categories are: {', '.join(valid_categories)}")
@@ -2092,7 +2093,7 @@ class CmdJobs(MuxCommand):
         # Validate category - make case-insensitive comparison
         valid_categories = ["REQ", "BUG", "PLOT", "BUILD", "MISC", "XP", 
                           "PRP", "VAMP", "SHIFT", "MORT", "POSS", "COMP", 
-                          "LING", "MAGE", "EQUIP"]
+                          "LING", "MAGE", "EQUIP", "INFL"]
         
         if new_category not in valid_categories:
             self.caller.msg(f"Invalid category. Valid categories are: {', '.join(valid_categories)}")
