@@ -159,6 +159,13 @@ forms_data = {
         'Gladius': {'stat_modifiers': {'Strength': 3, 'Dexterity': -1, 'Stamina': 2, 'Manipulation': -4, 'Appearance': -5}, 'difficulty': 6, 'rage_cost': 1},
         'Chasmus': {'stat_modifiers': {'Strength': 4, 'Dexterity': 1, 'Stamina': 3, 'Manipulation': -4}, 'difficulty': 7, 'rage_cost': 1},
         'Squamus': {'stat_modifiers': {'Strength': 2, 'Dexterity': 3, 'Stamina': 2, 'Manipulation': -4}, 'difficulty': 6, 'rage_cost': 1}
+    },
+    'camazotz': {
+        'Homid': {'stat_modifiers': {}, 'difficulty': 6, 'rage_cost': 0},
+        'Chiritos': {'stat_modifiers': {'Strength': 1, 'Dexterity': 2, 'Stamina': 1, 'Manipulation': -1, 'Appearance': -1}, 'difficulty': 7, 'rage_cost': 1},
+        'Crinos': {'stat_modifiers': {'Strength': 2, 'Dexterity': 3, 'Stamina': 2, 'Manipulation': -2, 'Appearance': -2}, 'difficulty': 6, 'rage_cost': 1},
+        'Murcielago': {'stat_modifiers': {'Strength': 1, 'Dexterity': 4, 'Stamina': 1, 'Manipulation': -3, 'Appearance': -3}, 'difficulty': 7, 'rage_cost': 1},
+        'Vampiro': {'stat_modifiers': {'Strength': -1, 'Dexterity': 4, 'Stamina': -1, 'Manipulation': -3}, 'difficulty': 6, 'rage_cost': 1}
     }
 }
 
