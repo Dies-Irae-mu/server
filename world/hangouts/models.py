@@ -7,10 +7,11 @@ from evennia.objects.models import ObjectDB
 
 # Categories for hangout locations
 HANGOUT_CATEGORIES = [
-    "Art", "Business", "Government", "Club", "Education", 
-    "Entertainment", "Gastronomy", "Health", "Landmarks",
-    "Lodging", "Outdoors", "Religious", "Social", "Sports",
-    "Store", "Transportation", "Faction", "Supernatural", "Vice"
+    "Art", "Bar", "Beach", "Business", "Club", "District", 
+    "Education", "Entertainment", "Faction", "Gastronomy", 
+    "Government", "Health", "Landmarks", "Lodging", "Outdoors", 
+    "Religious", "Restaurant", "Sector", "Social", "Sports",
+    "Store", "Supernatural", "Transportation", "Vice"
 ]
 
 class HangoutDB(ObjectDB):
@@ -245,4 +246,4 @@ class HangoutDB(ObjectDB):
             raise ValueError(f"Invalid category: {category}")
             
         visible_hangouts = cls.get_visible_hangouts(character)
-        return [h for h in visible_hangouts if h.db.category == category] 
+        return [h for h in visible_hangouts if h.db.category == category]
