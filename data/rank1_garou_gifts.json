@@ -671,7 +671,7 @@
     {
         "name": "Persuasion",
         "description": "The Garou can persuade others to do her bidding. A magpie-spirit teaches this Gift.",
-        "system": "The player rolls Charisma + Expression (difficulty 7). Success allows the character to persuade a single target to do her bidding for the duration of the scene.",
+        "system": "The player rolls Charisma + Subterfuge (difficulty 7). Success allows the character to persuade a single target to do her bidding for the duration of the scene.",
         "source": "Core book revised",
         "game_line": "Werewolf: The Apocalypse",
         "category": "powers",
