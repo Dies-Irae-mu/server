@@ -1326,7 +1326,7 @@ class CmdStateReset(MuxCommand):
         option = self.args.strip().lower()
         
         if option == "start":
-            if "state_reset" in GLOBAL_SCRIPTS:
+            if hasattr(GLOBAL_SCRIPTS, "state_reset"):
                 self.caller.msg("State reset script is already running.")
             else:
                 try:
@@ -1336,7 +1336,7 @@ class CmdStateReset(MuxCommand):
                     self.caller.msg(f"Error starting script: {e}")
             
         elif option == "stop":
-            if "state_reset" in GLOBAL_SCRIPTS:
+            if hasattr(GLOBAL_SCRIPTS, "state_reset"):
                 try:
                     GLOBAL_SCRIPTS.stop("state_reset")
                     self.caller.msg("State reset script stopped.")
@@ -1346,7 +1346,7 @@ class CmdStateReset(MuxCommand):
                 self.caller.msg("State reset script is not running.")
                 
         elif option == "status":
-            if "state_reset" in GLOBAL_SCRIPTS:
+            if hasattr(GLOBAL_SCRIPTS, "state_reset"):
                 script = GLOBAL_SCRIPTS.state_reset
                 self.caller.msg(f"State reset script is running. Next reset in {script.time_until_next_repeat()} seconds.")
             else:
