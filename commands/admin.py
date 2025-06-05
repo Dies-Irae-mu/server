@@ -1295,3 +1295,59 @@ class CmdForceDeleteObject(MuxCommand):
                 caller.msg(traceback.format_exc())
                 
         caller.msg(f"All deletion methods failed for {target.name}. This object may require database maintenance.")
+
+class CmdStateReset(MuxCommand):
+    """
+    Control the automatic state reset script.
+    
+    Usage:
+        +statereset start     - Start the state reset script
+        +statereset stop      - Stop the state reset script
+        +statereset status    - Check if script is running
+        +statereset force     - Force an immediate reset
+        
+    This command manages the automatic state reset script that helps
+    prevent character state desynchronisation.
+    """
+    
+    key = "+statereset"
+    aliases = ["statereset"]
+    locks = "cmd:perm(Admin)"
+    help_category = "Admin Commands"
+
+    def func(self):
+        from world.state_reset_script import start_state_reset_script, stop_state_reset_script
+        from world.state_reset import force_state_reset
+        from evennia.scripts.models import ScriptDB
+        
+        if not self.args:
+            self.caller.msg("Usage: +statereset <start|stop|status|force>")
+            return
+            
+        option = self.args.strip().lower()
+        
+        if option == "start":
+            success, msg = start_state_reset_script()
+            self.caller.msg(msg)
+            
+        elif option == "stop":
+            success, msg = stop_state_reset_script()
+            self.caller.msg(msg)
+                
+        elif option == "status":
+            scripts = ScriptDB.objects.filter(db_key="state_reset_script")
+            if scripts:
+                script = scripts[0]
+                self.caller.msg(f"State reset script is running. Next reset in {script.time_until_next_repeat()} seconds.")
+            else:
+                self.caller.msg("State reset script is not running.")
+                
+        elif option == "force":
+            try:
+                force_state_reset()
+                self.caller.msg("State reset completed.")
+            except Exception as e:
+                self.caller.msg(f"Error during state reset: {e}")
+                
+        else:
+            self.caller.msg("Invalid option. Use: +statereset <start|stop|status|force>")
