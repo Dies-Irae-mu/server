@@ -1316,9 +1316,8 @@ class CmdStateReset(MuxCommand):
     help_category = "Admin Commands"
 
     def func(self):
-        from world.state_reset_script import start_state_reset_script, stop_state_reset_script
+        from evennia import GLOBAL_SCRIPTS
         from world.state_reset import force_state_reset
-        from evennia.scripts.models import ScriptDB
         
         if not self.args:
             self.caller.msg("Usage: +statereset <start|stop|status|force>")
@@ -1327,17 +1326,28 @@ class CmdStateReset(MuxCommand):
         option = self.args.strip().lower()
         
         if option == "start":
-            success, msg = start_state_reset_script()
-            self.caller.msg(msg)
+            if "state_reset" in GLOBAL_SCRIPTS:
+                self.caller.msg("State reset script is already running.")
+            else:
+                try:
+                    GLOBAL_SCRIPTS.start("state_reset")
+                    self.caller.msg("State reset script started successfully.")
+                except Exception as e:
+                    self.caller.msg(f"Error starting script: {e}")
             
         elif option == "stop":
-            success, msg = stop_state_reset_script()
-            self.caller.msg(msg)
+            if "state_reset" in GLOBAL_SCRIPTS:
+                try:
+                    GLOBAL_SCRIPTS.stop("state_reset")
+                    self.caller.msg("State reset script stopped.")
+                except Exception as e:
+                    self.caller.msg(f"Error stopping script: {e}")
+            else:
+                self.caller.msg("State reset script is not running.")
                 
         elif option == "status":
-            scripts = ScriptDB.objects.filter(db_key="state_reset_script")
-            if scripts:
-                script = scripts[0]
+            if "state_reset" in GLOBAL_SCRIPTS:
+                script = GLOBAL_SCRIPTS.state_reset
                 self.caller.msg(f"State reset script is running. Next reset in {script.time_until_next_repeat()} seconds.")
             else:
                 self.caller.msg("State reset script is not running.")
