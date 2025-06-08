@@ -787,7 +787,8 @@ class Character(DefaultCharacter):
         # Filter receivers based on Umbra state
         filtered_receivers = [
             r for r in self.location.contents 
-            if hasattr(r, 'has_account') and r.has_account and r.db.in_umbra == self.db.in_umbra
+            if hasattr(r, 'has_account') and r.has_account
+            # and r.db.in_umbra == self.db.in_umbra  # Comment out reality layer check
         ]
 
         # Prepare the say messages
@@ -821,7 +822,8 @@ class Character(DefaultCharacter):
         # Filter receivers based on Umbra state
         filtered_receivers = [
             r for r in self.location.contents 
-            if hasattr(r, 'has_account') and r.has_account and r.db.in_umbra == self.db.in_umbra
+            if hasattr(r, 'has_account') and r.has_account
+            # and r.db.in_umbra == self.db.in_umbra  # Comment out reality layer check
         ]
 
         # Send messages to receivers
@@ -856,7 +858,8 @@ class Character(DefaultCharacter):
         # Filter receivers based on Umbra state
         filtered_receivers = [
             r for r in self.location.contents 
-            if hasattr(r, 'has_account') and r.has_account and r.db.in_umbra == self.db.in_umbra
+            if hasattr(r, 'has_account') and r.has_account
+            # and r.db.in_umbra == self.db.in_umbra  # Comment out reality layer check
         ]
         
         # Send the emote to filtered receivers

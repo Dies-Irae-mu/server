@@ -124,11 +124,11 @@ class RoomParent(DefaultRoom):
         characters = []
         for obj in self.contents:
             if obj.has_account:
-                # Check if they share the same reality layer
-                if ((looker.tags.get("in_umbra", category="state") and obj.tags.get("in_umbra", category="state")) or
-                    (looker.tags.get("in_material", category="state") and obj.tags.get("in_material", category="state")) or
-                    (looker.tags.get("in_dreaming", category="state") and obj.tags.get("in_dreaming", category="state"))):
-                    characters.append(obj)
+                # Comment out reality layer checks temporarily
+                # if ((looker.tags.get("in_umbra", category="state") and obj.tags.get("in_umbra", category="state")) or
+                #     (looker.tags.get("in_material", category="state") and obj.tags.get("in_material", category="state")) or
+                #     (looker.tags.get("in_dreaming", category="state") and obj.tags.get("in_dreaming", category="state"))):
+                characters.append(obj)
 
         if characters:
             string += divider("Characters", width=78, fillchar=ANSIString(f"{border_color}-|n")) + "\n"

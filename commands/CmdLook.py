@@ -69,9 +69,11 @@ class CmdLook(MuxCommand):
 
         # Check if the found object is in the same Umbra state
         if hasattr(look_at_obj, 'has_account') and look_at_obj.has_account:
-            if look_at_obj.db.in_umbra != caller.db.in_umbra:
-                caller.msg(f"Could not find '{args}'.")
-                return
+            # Comment out reality layer check
+            # if look_at_obj.db.in_umbra != caller.db.in_umbra:
+            #     caller.msg(f"Could not find '{args}'.")
+            #     return
+            pass  # Keep the if block structure but do nothing
 
         # Show the object's appearance
         caller.msg(look_at_obj.return_appearance(caller))
