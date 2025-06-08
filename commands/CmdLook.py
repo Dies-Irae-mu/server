@@ -73,7 +73,7 @@ class CmdLook(MuxCommand):
             # if look_at_obj.db.in_umbra != caller.db.in_umbra:
             #     caller.msg(f"Could not find '{args}'.")
             #     return
-            pass  # Keep the if block structure but do nothing
+            pass  # Keep the if block structure but do nothing - if we need it later, go back to the commented out code.
 
         # Show the object's appearance
         caller.msg(look_at_obj.return_appearance(caller))

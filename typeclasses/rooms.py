@@ -124,7 +124,7 @@ class RoomParent(DefaultRoom):
         characters = []
         for obj in self.contents:
             if obj.has_account:
-                # Comment out reality layer checks temporarily
+                # Comment out reality layer checks
                 # if ((looker.tags.get("in_umbra", category="state") and obj.tags.get("in_umbra", category="state")) or
                 #     (looker.tags.get("in_material", category="state") and obj.tags.get("in_material", category="state")) or
                 #     (looker.tags.get("in_dreaming", category="state") and obj.tags.get("in_dreaming", category="state"))):
