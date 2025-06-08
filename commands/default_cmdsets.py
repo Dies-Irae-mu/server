@@ -39,7 +39,7 @@ from commands.CmdRoomLog import CmdRoomLog
 
 from commands.CmdUmbraInteraction import CmdUmbraInteraction
 from commands.communication import CmdMeet, CmdPlusIc, CmdPlusOoc, CmdOOC, CmdSummon, CmdJoin, CmdCheckComm
-from commands.admin import CmdApprove, CmdUnapprove, CmdAdminLook, CmdTestLock, CmdPuppetFreeze, CmdMassUnapprove, CmdReturn, CmdCheckGhosts, CmdForceDeleteObject, CmdStateReset
+from commands.admin import CmdApprove, CmdUnapprove, CmdAdminLook, CmdTestLock, CmdPuppetFreeze, CmdMassUnapprove, CmdReturn, CmdCheckGhosts, CmdForceDeleteObject
 from commands.CmdPump import CmdPump
 from commands.CmdSpendGain import CmdSpendGain
 from commands.where import CmdWhere
@@ -190,7 +190,6 @@ class CharacterCmdSet(cmdset_character.CharacterCmdSet):
         self.add(CmdSummon())
         self.add(CmdCheckComm())
         self.add(CmdForceDeleteObject())
-        self.add(CmdStateReset())
 
 
 class AccountCmdSet(cmdset_account.AccountCmdSet):
@@ -248,7 +247,6 @@ class AccountCmdSet(cmdset_account.AccountCmdSet):
         self.add(CmdEquip())
         self.add(CmdInventory())
         self.add(CmdForceDeleteObject())
-        self.add(CmdStateReset())
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
     """
