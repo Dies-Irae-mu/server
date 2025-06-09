@@ -217,88 +217,92 @@ class CmdNPC(default_cmds.MuxCommand):
     help_category = "RP Commands"
 
     def func(self):
-        if not self.caller.location:
-            self.caller.msg("You must be in a location to use this command.")
-            return
+        """Temporarily disabled."""
+        self.caller.msg("NPC code is disabled.")
+        return
+        
+        # if not self.caller.location:
+        #     self.caller.msg("You must be in a location to use this command.")
+        #     return
 
-        if not self.switches:
-            self.caller.msg("You must specify a switch. See help +npc for usage.")
-            return
+        # if not self.switches:
+        #     self.caller.msg("You must specify a switch. See help +npc for usage.")
+        #     return
 
-        if "list" in self.switches:
-            self.list_npcs()
-            return
+        # if "list" in self.switches:
+        #     self.list_npcs()
+        #     return
             
-        if "listall" in self.switches or "global" in self.switches:
-            # Check permissions for global listing
-            if not (self.caller.check_permstring("Builder") or 
-                    self.caller.check_permstring("Admin") or 
-                    self.caller.check_permstring("Storyteller")):
-                self.caller.msg("You don't have permission to list all NPCs.")
-                return
-            self.list_all_npcs()
-            return
+        # if "listall" in self.switches or "global" in self.switches:
+        #     # Check permissions for global listing
+        #     if not (self.caller.check_permstring("Builder") or 
+        #             self.caller.check_permstring("Admin") or 
+        #             self.caller.check_permstring("Storyteller")):
+        #         self.caller.msg("You don't have permission to list all NPCs.")
+        #         return
+        #     self.list_all_npcs()
+        #     return
             
-        if "nationalities" in self.switches:
-            self.caller.msg(f"Available nationalities: {NameGenerator.list_nationalities()}")
-            return
+        # if "nationalities" in self.switches:
+        #     self.caller.msg(f"Available nationalities: {NameGenerator.list_nationalities()}")
+        #     return
 
-        if "name" in self.switches:
-            # Handle name generation
-            self.generate_name()
-            return
+        # if "name" in self.switches:
+        #     # Handle name generation
+        #     self.generate_name()
+        #     return
 
-        if "remove" in self.switches:
-            self.remove_npc(self.args)
-            return
+        # if "remove" in self.switches:
+        #     self.remove_npc(self.args)
+        #     return
 
-        if "create" in self.switches:
-            self.create_npc(self.args)
-            return
+        # if "create" in self.switches:
+        #     self.create_npc(self.args)
+        #     return
 
-        if "sheet" in self.switches:
-            self.view_sheet(self.args)
-            return
+        # if "sheet" in self.switches:
+        #     self.view_sheet(self.args)
+        #     return
 
-        if not self.args:
-            self.caller.msg("You must specify an NPC name and parameters. See help +npc for usage.")
-            return
+        # if not self.args:
+        #     self.caller.msg("You must specify an NPC name and parameters. See help +npc for usage.")
+        #     return
 
-        # Parse name and parameters
-        if "=" in self.args:
-            name, params = self.args.split("=", 1)
-            name = name.strip()
-            params = params.strip()
-        else:
-            name = self.args.strip()
-            params = None
+        # # Parse name and parameters
+        # if "=" in self.args:
+        #     name, params = self.args.split("=", 1)
+        #     name = name.strip()
+        #     params = params.strip()
+        # else:
+        #     name = self.args.strip()
+        #     params = None
             
-        # Resolve NPC name (supports both numerical ID and partial matching)
-        resolved_name = self.resolve_npc_name(name)
-        if not resolved_name:
-            self.caller.msg(f"No NPC matching '{name}' found in this scene.")
-            return
+        # # Resolve NPC name (supports both numerical ID and partial matching)
+        # resolved_name = self.resolve_npc_name(name)
+        # if not resolved_name:
+        #     self.caller.msg(f"No NPC matching '{name}' found in this scene.")
+        #     return
 
-        # Handle different switches
-        if "roll" in self.switches:
-            self.roll_for_npc(resolved_name, params)
-        elif "hurt" in self.switches:
-            self.hurt_npc(resolved_name, params)
-        elif "heal" in self.switches:
-            self.heal_npc(resolved_name, params)
-        elif "health" in self.switches:
-            self.show_health(resolved_name)
-        elif "pose" in self.switches:
-            self.pose_npc(resolved_name, params)
-        elif "emit" in self.switches:
-            self.emit_npc(resolved_name, params)
-        elif "say" in self.switches:
-            self.say_npc(resolved_name, params)
-        elif "inhabit" in self.switches:
-            self.inhabit_npc(resolved_name)
-        elif "uninhabit" in self.switches:
-            self.uninhabit_npc(resolved_name)
-            
+        # # Handle different switches
+        # if "roll" in self.switches:
+        #     self.roll_for_npc(resolved_name, params)
+        # elif "hurt" in self.switches:
+        #     self.hurt_npc(resolved_name, params)
+        # elif "heal" in self.switches:
+        #     self.heal_npc(resolved_name, params)
+        # elif "health" in self.switches:
+        #     self.show_health(resolved_name)
+        # elif "pose" in self.switches:
+        #     self.pose_npc(resolved_name, params)
+        # elif "emit" in self.switches:
+        #     self.emit_npc(resolved_name, params)
+        # elif "say" in self.switches:
+        #     self.say_npc(resolved_name, params)
+        # elif "inhabit" in self.switches:
+        #     self.inhabit_npc(resolved_name)
+        # elif "uninhabit" in self.switches:
+        #     self.uninhabit_npc(resolved_name)
+
     def resolve_npc_name(self, name):
         """
         Resolve an NPC name from either a numeric ID (#1) or partial name match.
