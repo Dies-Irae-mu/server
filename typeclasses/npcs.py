@@ -823,15 +823,15 @@ class NPC(DefaultCharacter):
         # NPCs cannot be logged into directly
         return False
 
-    def at_init(self):
-        """
-        Called when the typeclass is cached from memory.
-        """
-        # Check for expiration if this is a temporary NPC
-        if getattr(self.db, "is_temporary", False) and self.is_expired():
-            # Schedule deletion to happen after init completes
-            from evennia.scripts.taskhandler import TaskHandlerPool
-            TaskHandlerPool.add_task(self.delete, (), {}, priority=10)
+    # def at_init(self):
+    #     """
+    #     Called when the typeclass is cached from memory.
+    #     """
+    #     # Check for expiration if this is a temporary NPC
+    #     if getattr(self.db, "is_temporary", False) and self.is_expired():
+    #         # Schedule deletion to happen after init completes
+    #         from evennia.scripts.taskhandler import TaskHandlerPool
+    #         TaskHandlerPool.add_task(self.delete, (), {}, priority=10)
 
     def at_object_delete(self):
         """Called just before the NPC is deleted from the database."""
