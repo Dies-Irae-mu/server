@@ -207,6 +207,8 @@ class AccountCmdSet(cmdset_account.AccountCmdSet):
         Populates the cmdset
         """
         super().at_cmdset_creation()
+
+        self.remove("chardelete")
         
         # Add our custom channel command
         self.add(CustomCmdChannel())
@@ -264,7 +266,7 @@ class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
-        self.remove("chardelete")
+        
 
 
 class SessionCmdSet(default_cmds.SessionCmdSet):
