@@ -264,6 +264,7 @@ class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        self.remove("chardelete")
 
 
 class SessionCmdSet(default_cmds.SessionCmdSet):
