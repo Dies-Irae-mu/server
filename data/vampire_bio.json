@@ -91,10 +91,10 @@
         "game_line": "Vampire: The Masquerade",
         "category": "identity",
         "stat_type": "personal",
-        "values": ["Night", "Metamorphosis", "Beast", "Harmony", "Evil Revelations", "Self-Focus", "Scorched Heart", 
-                   "Entelechy", "Sharia El-Sama", "Asakku", "Death and the Soul", "Honorable Accord", "Feral Heart", 
-                   "Orion", "Power and the Inner Voice", "Lilith", "Caine", "Cathari", "Redemption", "Bones", "Typhon", 
-                   "Paradox", "Blood", "Hive", "Humanity"]
+        "values": ["Night", "Metamorphosis", "Beast", "Harmony", "Evil Revelations", "Self-Focus", "Scorched Heart",
+            "Entelechy", "Sharia El-Sama", "Asakku", "Death and the Soul", "Honorable Accord", "Feral Heart",
+            "Orion", "Power and the Inner Voice", "Lilith", "Caine", "Cathari", "Redemption", "Bones", "Typhon",
+            "Paradox", "Blood", "Hive", "Humanity", "Sun", "Ecstasy", "Sutekh", "Warrior"]
         },
     {
         "name": "Occupation",
