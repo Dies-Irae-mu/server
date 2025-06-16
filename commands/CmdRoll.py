@@ -239,24 +239,43 @@ class CmdRoll(default_cmds.MuxCommand):
         # Process the expression by properly handling standalone + and - operators
         components = []
         
-        # Manually separate components with a simpler approach
-        # First split by + operator
-        # This assumes + and - are used as standalone operators, not within stat names
-        plus_parts = re.split(r'(?<!\w)\+(?!\w)', expression)
+        # Simple but effective approach: split by + first (safe since + can't be in stat names)
+        plus_parts = re.split(r'\+', expression)
         
         for plus_index, plus_part in enumerate(plus_parts):
-            # Split each part by - operator
-            minus_parts = re.split(r'(?<!\w)-(?!\w)', plus_part)
+            plus_part = plus_part.strip()
+            if not plus_part:
+                continue
+                
+            # Now handle potential minus operations in this part
+            # We'll be conservative: only treat - as an operator if it's followed by digits
+            # or if it's surrounded by spaces
             
-            # Process the first part with + operator (or implicit + if it's the first part)
-            if minus_parts[0].strip():
-                components.append(('+', minus_parts[0].strip()))
-            
-            # Process subsequent parts with - operator
-            for minus_part in minus_parts[1:]:
-                if minus_part.strip():
-                    components.append(('-', minus_part.strip()))
-        
+            # Look for "word - word" (spaces around minus) or "word-number" patterns
+            if ' - ' in plus_part:
+                # Space-separated minus - definitely an operator
+                minus_parts = plus_part.split(' - ')
+                for i, part in enumerate(minus_parts):
+                    part = part.strip()
+                    if part:
+                        if i == 0:
+                            components.append(('+', part))
+                        else:
+                            components.append(('-', part))
+            elif re.search(r'[a-zA-Z]-\d', plus_part):
+                # Pattern like "athletics-2" - treat as stat minus number
+                match = re.match(r'([a-zA-Z-]+)-(\d+)', plus_part)
+                if match:
+                    stat_part, num_part = match.groups()
+                    components.append(('+', stat_part.strip()))
+                    components.append(('-', num_part.strip()))
+                else:
+                    # Fallback: treat as single component
+                    components.append(('+', plus_part))
+            else:
+                # No clear minus operator - treat as single component
+                components.append(('+', plus_part))
+
         # If the components are empty, something went wrong
         if not components:
             self.caller.msg("Could not parse roll expression. Try a simpler format like 'stat1 + stat2'.")

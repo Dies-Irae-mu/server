@@ -1418,7 +1418,7 @@ class CmdXPCost(default_cmds.MuxCommand):
         output += " • Attributes: 4 XP * current rating\n"
         output += " • Abilities: 3xp 0 -> 1, 2 XP * current rating\n"
         output += " • Secondary Abilities: 3xp 0 -> 1, 2 XP * current rating\n"
-        output += " • Backgrounds: 5 XP per dot\n"
+        output += " • Backgrounds: 3 XP per dot (6 XP for some special backgrounds)\n"
         output += " • Willpower: 2 XP * current rating\n"
         output += " • Merit: 5xp * rating\n"
         output += " • Flaw: 5xp * rating to buy off the Flaw\n"

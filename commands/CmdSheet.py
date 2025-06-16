@@ -350,10 +350,7 @@ class CmdSheet(MuxCommand):
                 
                 # Special handling for Silver Fangs
                 if tribe and char_type.lower() == 'garou' and tribe.lower() == 'silver fangs':
-                    # Remove 'Camp' if it's in the list
-                    if 'Camp' in stats:
-                        stats.remove('Camp')
-                    # Add Silver Fang specific stats
+                    # Add Silver Fang specific stats (keep Camp, don't remove it)
                     stats.extend(['Fang House', 'Lodge'])
                 return stats
         

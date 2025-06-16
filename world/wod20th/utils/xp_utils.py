@@ -726,7 +726,7 @@ def calculate_xp_cost(character, is_staff_spend: bool, stat_name: str, category:
         requires_approval = new_rating > 4
     
     elif category == 'backgrounds':
-        cost = calculate_background_cost(current_rating, new_rating)
+        cost = calculate_background_cost(current_rating, new_rating, character, base_stat_name)
         
         # Check if the background requires approval
         AUTO_SPEND_BACKGROUNDS = ["allies", "contacts", "resources", "fame"]
@@ -1019,7 +1019,7 @@ def process_xp_purchase(character, stat_name, new_rating, category=None, subcate
             elif category in ['abilities', 'secondary_abilities']:
                 cost = calculate_ability_cost(current_rating, new_rating)
             elif category == 'backgrounds':
-                cost = calculate_background_cost(current_rating, new_rating)
+                cost = calculate_background_cost(current_rating, new_rating, character, stat_name)
             elif category == 'merits':
                 cost = calculate_merit_cost(current_rating, new_rating)
             elif category == 'flaws':
