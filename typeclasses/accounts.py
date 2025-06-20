@@ -136,31 +136,6 @@ class Account(DefaultAccount):
 
     """
 
-    def at_post_create_character(self, character, **kwargs):
-        """
-        Called just after a character has been created for this account.
-        
-        Args:
-            character (Character): The character that was just created.
-            **kwargs: Additional keyword arguments.
-        """
-        # Import here to avoid circular imports
-        from typeclasses.characters import Character
-        
-        # Validate the character name against existing aliases
-        is_valid, error_message = Character.validate_name_against_aliases(
-            character.key
-        )
-        
-        if not is_valid:
-            # Character name conflicts with an existing alias
-            # Delete the character and raise an exception to prevent creation
-            character.delete()
-            
-            # Raise an exception that will be caught by the create command
-            from evennia.utils.utils import ValidationError
-            raise ValidationError(error_message)
-
     def at_disconnect(self, reason=None, **kwargs):
         """
         Called just before user is disconnected.
@@ -173,9 +148,7 @@ class Account(DefaultAccount):
         """
         reason = f" ({reason if reason else ''})"
         self._send_to_connect_channel(
-            ("|R{key} has disconnected{reason}|n").format(
-                key=self.key, reason=reason
-            )
+            ("|R{key} has disconnected{reason}|n").format(key=self.key, reason=reason)
         )
 
     pass
