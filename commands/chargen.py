@@ -1,14 +1,18 @@
 # commands/chargen.py
 
-from evennia.commands.default.muxcommand import MuxCommand
+from evennia import Command
+from evennia.utils.evmenu import EvMenu
 from world.wod20th.utils.mortalplus_utils import MORTALPLUS_TYPES
+from world.wod20th.models import Stat
+from world.wod20th.utils.shifter_utils import SHIFTER_IDENTITY_STATS, SHIFTER_RENOWN
+from world.wod20th.utils.virtue_utils import calculate_willpower, calculate_path
 from typeclasses.characters import Character
+from evennia.commands.default.muxcommand import MuxCommand
 from world.jobs.models import Job, Queue
 from django.utils import timezone
 
 ATTRIBUTE_CATEGORIES = ['Physical', 'Social', 'Mental']
 ABILITY_CATEGORIES = ['Talents', 'Skills', 'Knowledges']
-
 
 class CmdSubmit(MuxCommand):
     """
@@ -137,7 +141,6 @@ class CmdSubmit(MuxCommand):
         except Exception as e:
             caller.msg("|rError submitting character: {0}|n".format(e))
 
-
 def setup_mortalplus_character(character, mortalplus_type):
     """
     Set up initial stats and powers for Mortal+ characters
@@ -167,20 +170,20 @@ def setup_mortalplus_character(character, mortalplus_type):
         # Initialize Glamour pool
         character.set_stat('pools', 'dual', 'Glamour', 2, temp=False)
         character.set_stat('pools', 'dual', 'Glamour', 2, temp=True)
-
+"""
 class CmdRename(MuxCommand):
-    """
-    Change your character's name during character generation.
+   # 
+    #Change your character's name during character generation.
 
-    Usage:
-      +rename <new name>
+    #Usage:
+    #  +rename <new name>
 
-    This command allows you to change your character's name before approval.
-    Once your character is approved, you will need staff assistance to change your name.
+    #This command allows you to change your character's name before approval.
+    #Once your character is approved, you will need staff assistance to change your name.
 
-    The new name must be appropriate for the game's setting and follow naming conventions.
-    Names should be properly capitalized and not contain special characters.
-    """
+    #The new name must be appropriate for the game's setting and follow naming conventions.
+    #Names should be properly capitalized and not contain special characters.
+    
 
     key = "+rename"
     aliases = ["rename"]
@@ -188,6 +191,7 @@ class CmdRename(MuxCommand):
     help_category = "Chargen & Character Info"
 
     def func(self):
+        
         caller = self.caller
 
         # Check if character is approved
@@ -214,12 +218,6 @@ class CmdRename(MuxCommand):
             caller.msg("|rError: Name can only contain letters, numbers, and spaces.|n")
             return
 
-        # Check if new name conflicts with existing character names or aliases
-        is_valid, error_msg = Character.validate_name_against_aliases(new_name, exclude_character=caller)
-        if not is_valid:
-            caller.msg(f"|rError: {error_msg}|n")
-            return
-
         # Store the old name for the message
         old_name = caller.name
 
@@ -234,3 +232,4 @@ class CmdRename(MuxCommand):
         caller.aliases.add(new_name)
 
         caller.msg(f"|gYour name has been changed from {old_name} to {new_name}.|n")
+"""

@@ -1256,44 +1256,6 @@ class Character(DefaultCharacter):
         
         return matches[0] if matches else None
 
-    @classmethod
-    def validate_name_against_aliases(cls, name, exclude_character=None):
-        """
-        Validate that a proposed character name doesn't conflict with existing aliases.
-        
-        Args:
-            name (str): The proposed character name
-            exclude_character (Character, optional): Character to exclude from checks
-                (useful when renaming an existing character)
-                
-        Returns:
-            tuple: (is_valid, error_message)
-        """
-        from evennia.utils.search import search_object
-        
-        # Check for existing character names
-        existing = search_object(name, typeclass=cls)
-        for obj in existing:
-            if exclude_character and obj == exclude_character:
-                continue
-            if obj.key.lower() == name.lower():
-                return False, "That name is already in use by another character."
-        
-        # Check for existing aliases
-        existing_aliases = search_object(
-            name,
-            attribute_name="alias",
-            exact=True,
-            typeclass='typeclasses.characters.Character'
-        )
-        for obj in existing_aliases:
-            if exclude_character and obj == exclude_character:
-                continue
-            if obj.attributes.get("alias", "").lower() == name.lower():
-                return False, "That name is already in use as an alias by another character."
-        
-        return True, ""
-
     def handle_language_merit_change(self):
         """
         Handle changes to Language merit or Natural Linguist merit.
