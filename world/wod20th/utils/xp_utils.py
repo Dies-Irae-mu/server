@@ -715,7 +715,7 @@ def calculate_xp_cost(character, is_staff_spend: bool, stat_name: str, category:
     # Calculate cost based on category
     if category == 'attributes':
         cost = calculate_attribute_cost(current_rating, new_rating)
-        requires_approval = new_rating > 4
+        requires_approval = new_rating > 3
     
     elif category in ['abilities', 'secondary_abilities']:
         if subcategory in ['talent', 'skill', 'knowledge', 'secondary_talent', 'secondary_skill', 'secondary_knowledge']:
