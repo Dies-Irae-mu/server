@@ -10,7 +10,7 @@ HANGOUT_CATEGORIES = [
     "Art", "Bar", "Beach", "Business", "Club", "District", 
     "Education", "Entertainment", "Faction", "Gastronomy", 
     "Government", "Health", "Landmarks", "Lodging", "Outdoors", 
-    "Religious", "Restaurant", "Sector", "Social", "Sports",
+    "Religious", "Restaurant", "Sector", "District", "Social", "Sports",
     "Store", "Supernatural", "Transportation", "Vice"
 ]
 
