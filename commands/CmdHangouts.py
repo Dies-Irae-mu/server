@@ -322,11 +322,27 @@ class CmdHangout(MuxCommand):
                 
                 # Move the character
                 if self.caller.move_to(room, quiet=True):
+                    # Force location refresh for everyone in the room
+                    for obj in room.contents:
+                        if obj.has_account:
+                            obj.location = room  # Force location refresh
+                    
+                    # Send explicit messages to force session synchronization
+                    for obj in room.contents:
+                        if obj.has_account and obj != self.caller:
+                            # Message other players about the arrival
+                            obj.msg(f"{self.caller.name} has arrived.")
+                            # Message the teleporter about seeing the other player
+                            self.caller.msg(f"You see {obj.name} here.")
+                    
                     # Announce arrival to the new room
-                    room.msg_contents(f"{self.caller.name} has arrived.")
+                    room.msg_contents(f"{self.caller.name} has arrived.", exclude=self.caller)
                     
                     # Message to the character
                     self.caller.msg(f"You teleport to {hangout.key}.")
+                    
+                    # Force the character to look around
+                    self.caller.execute_cmd("look")
                 else:
                     self.caller.msg("Failed to teleport to the hangout.")
                 
@@ -434,4 +450,3 @@ class CmdHangout(MuxCommand):
             
         except ValueError:
             self.caller.msg("Please specify a valid hangout number.")
-    
