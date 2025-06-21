@@ -450,3 +450,207 @@ class CmdHangout(MuxCommand):
             
         except ValueError:
             self.caller.msg("Please specify a valid hangout number.")
+
+class CmdVacate(MuxCommand):
+    """
+    Vacate your residence or force vacate another's residence (staff only).
+    
+    Usage:
+        +vacate              - Vacate your residence in current building
+        +vacate/all         - List all your residences
+        +vacate <number>    - Vacate specific residence (if you own it)
+        +vacate/force <number> - Force vacate a residence (staff only)
+    """
+    
+    key = "+vacate"
+    locks = "cmd:all()"
+    help_category = "Building and Housing"
+    
+    def find_residence(self, residence_number=None):
+        """Helper method to find building containing player's residence."""
+        # Search all rooms for housing data
+        for room in ObjectDB.objects.filter(db_typeclass_path__contains="rooms.Room"):
+            if room.is_housing_area():
+                tenants = room.db.housing_data.get('current_tenants', {})
+                for res_id, tenant_id in tenants.items():
+                    if tenant_id == self.caller.id:
+                        try:
+                            residence = ObjectDB.objects.get(id=res_id)
+                            if residence_number is None or residence.key.endswith(str(residence_number)):
+                                return room, residence
+                        except ObjectDB.DoesNotExist:
+                            continue
+        return None, None
+
+    def is_owner(self, room, player):
+        """Check if a player owns a residence."""
+        if not room or not player or not hasattr(room, 'db'):
+            return False
+
+        # Check home_data first
+        home_data = room.db.home_data if hasattr(room.db, 'home_data') else None
+        if home_data:
+            if home_data.get('owner') and home_data['owner'].id == player.id:
+                return True
+            if player.id in home_data.get('co_owners', set()):
+                return True
+            
+        # Check housing_data next
+        housing_data = room.db.housing_data if hasattr(room.db, 'housing_data') else None
+        if housing_data:
+            if housing_data.get('owner'):
+                if housing_data['owner'].id == player.id:
+                    return True
+            
+            if housing_data.get('current_tenants'):
+                if str(room.id) in housing_data['current_tenants'] and housing_data['current_tenants'][str(room.id)] == player.id:
+                    return True
+            
+        # Finally check legacy owner
+        if hasattr(room.db, 'owner') and room.db.owner:
+            if room.db.owner.id == player.id:
+                return True
+            
+        return False
+
+    def func(self):
+        from evennia.objects.models import ObjectDB
+        from evennia.utils import evtable
+        
+        if "all" in self.switches:
+            # List all residences owned by player
+            residences = []
+            for room in ObjectDB.objects.filter(db_typeclass_path__contains="rooms.Room"):
+                if room.is_housing_area():
+                    tenants = room.db.housing_data.get('current_tenants', {})
+                    for res_id, tenant_id in tenants.items():
+                        if tenant_id == self.caller.id:
+                            try:
+                                residence = ObjectDB.objects.get(id=res_id)
+                                residences.append((room, residence))
+                            except ObjectDB.DoesNotExist:
+                                continue
+            
+            if not residences:
+                self.caller.msg("You don't own any residences.")
+                return
+                
+            table = evtable.EvTable("|wResidence|n", "|wLocation|n", "|wType|n", border="table")
+            for area, residence in residences:
+                table.add_row(
+                    residence.get_display_name(self.caller),
+                    area.get_display_name(self.caller),
+                    residence.db.roomtype.title()
+                )
+            self.caller.msg(table)
+            return
+
+        if "force" in self.switches:
+            if not self.caller.check_permstring("builders"):
+                self.caller.msg("You don't have permission to force vacate residences.")
+                return
+                
+            if not self.args:
+                self.caller.msg("Please specify a residence number to force vacate.")
+                return
+                
+            building, residence = self.find_residence(self.args)
+            if not residence:
+                self.caller.msg("Residence not found.")
+                return
+        else:
+            # Normal vacate
+            if self.args:
+                building, residence = self.find_residence(self.args)
+                if not residence:
+                    self.caller.msg("You don't own that residence.")
+                    return
+            else:
+                # Try to vacate current location
+                location = self.caller.location
+                if not (location.db.roomtype and 
+                        any(rtype.lower() in location.db.roomtype.lower() 
+                            for rtype in ["apartment", "house", "splat_housing", "studio", "room", "encampment"]) and 
+                        self.is_owner(location, self.caller)):
+                    self.caller.msg("You must be in your residence to vacate it.")
+                    return
+                    
+                # Find the building
+                for exit in location.exits:
+                    if exit.key == "Out":
+                        building = exit.destination
+                        residence = location
+                        break
+                else:
+                    self.caller.msg("Error finding building. Please contact staff.")
+                    return
+
+        # Perform the vacate
+        if residence.db.owner != self.caller and not self.caller.check_permstring("builders"):
+            self.caller.msg("You don't own this residence.")
+            return
+            
+        # Move any occupants to the building
+        for obj in residence.contents:
+            if obj.has_account:
+                obj.msg("This residence is being vacated. You are being moved out.")
+                
+                # Session synchronization for vacate moves
+                for session in obj.sessions.all():
+                    if session:
+                        session.msg(text=f"Being moved out as residence is being vacated...")
+                
+                if obj.move_to(building, quiet=True):
+                    obj.location = building
+                    obj.execute_cmd("look")
+                
+        # Clean up child rooms if they exist
+        if hasattr(residence.db, 'child_rooms'):
+            for room in residence.db.child_rooms:
+                if room:
+                    for obj in room.contents:
+                        if obj.has_account:
+                            for session in obj.sessions.all():
+                                if session:
+                                    session.msg(text=f"Being moved out as residence is being vacated...")
+                            
+                            if obj.move_to(building, quiet=True):
+                                obj.location = building
+                                obj.execute_cmd("look")
+                    # Delete all exits in the child room
+                    for exit in room.exits:
+                        exit.delete()
+                    room.delete()
+
+        # Update building data
+        if building and building.db.housing_data:
+            if residence.id in building.db.housing_data['current_tenants']:
+                del building.db.housing_data['current_tenants'][residence.id]
+            # Handle apartment numbers for both numeric and string values
+            try:
+                number = int(residence.key.split()[-1])
+                if number in building.db.housing_data['apartment_numbers']:
+                    building.db.housing_data['apartment_numbers'].remove(number)
+            except (ValueError, IndexError):
+                # If it's not a numeric apartment number, try to remove the full name
+                if residence.key in building.db.housing_data['apartment_numbers']:
+                    building.db.housing_data['apartment_numbers'].remove(residence.key)
+        
+        # Clear home location if this was their home
+        if self.caller.home == residence:
+            self.caller.home = None
+            self.caller.msg("Your home location has been cleared.")
+            
+        # Delete all exits in the main residence
+        for exit in residence.exits:
+            exit.delete()
+            
+        # Delete the entrance exit from the building
+        for exit in building.contents:
+            if (hasattr(exit, 'destination') and 
+                exit.destination == residence):
+                exit.delete()
+            
+        # Delete the residence
+        residence.delete()
+        self.caller.msg("You have vacated the residence.")
