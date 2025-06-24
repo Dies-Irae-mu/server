@@ -359,7 +359,7 @@ class CmdLanguage(MuxCommand):
         categories = {
             "San Diego Common Languages": [
                 "English", "Spanish", "Tagalog", "Mandarin", "Vietnamese", "Korean", "Japanese", 
-                "Khmer", "Hmong", "Thai", "Lao"
+                "Khmer", "Hmong", "Thai", "Lao", "American Sign Language"
             ],
             "African Languages": [
                 "Amharic", "Hausa", "Igbo", "Lingala", "Oromo", "Somali",
