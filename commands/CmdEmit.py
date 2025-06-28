@@ -74,34 +74,42 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
         self.send_pose_break()
 
         if 'language' in self.switches:
-            # The entire emit is in the set language
+            # With /language switch, treat all quoted speech as being in the set language
             speaking_language = caller.get_speaking_language()
             
             for receiver in filtered_receivers:
-                has_universal = any(
-                    merit.lower().replace(' ', '') == 'universallanguage'
-                    for category in receiver.db.stats.get('merits', {}).values()
-                    for merit in category.keys()
-                )
+                # Check for Universal Language merit
+                has_universal = False
+                if hasattr(receiver, 'db') and receiver.db.stats:
+                    for category in receiver.db.stats.get('merits', {}).values():
+                        if isinstance(category, dict):
+                            for merit in category.keys():
+                                if merit.lower().replace(' ', '') == 'universallanguage':
+                                    has_universal = True
+                                    break
                 
-                if receiver == caller or has_universal or speaking_language in receiver.get_languages():
-                    # For those who understand, show the original message
+                # Check if receiver understands the language
+                understands_language = (receiver == caller or 
+                                      has_universal or 
+                                      (hasattr(receiver, 'get_languages') and 
+                                       speaking_language in receiver.get_languages()))
+                
+                if understands_language:
+                    # They understand - show original message
                     receiver.msg(processed_args)
                 else:
-                    # For those who don't understand, use prepare_say to get the garbled version
-                    result = caller.prepare_say(processed_args, viewer=receiver, language_only=True, skip_english=True)
-                    if isinstance(result, tuple) and len(result) >= 3:
-                        _, _, msg_not_understand, _ = result
-                        if msg_not_understand:
-                            receiver.msg(msg_not_understand)
-                        else:
-                            # Fallback if prepare_say doesn't return expected result
-                            receiver.msg(f"|y<< something in {speaking_language} >>|n")
-                    else:
-                        # Fallback if prepare_say doesn't return expected result
-                        receiver.msg(f"|y<< something in {speaking_language} >>|n")
+                    # They don't understand - process quoted speech
+                    message = processed_args
+                    # Simple replacement of quoted text
+                    import re
+                    quote_pattern = r'"([^"]*)"'
+                    def replace_quote(match):
+                        return '"<< something in ' + speaking_language + ' >>"'
+                    
+                    processed_message = re.sub(quote_pattern, replace_quote, message)
+                    receiver.msg(processed_message)
         else:
-            # Handle mixed language content
+            # Handle mixed language content (original ~ system)
             for receiver in filtered_receivers:
                 if "~" in processed_args:
                     parts = []
