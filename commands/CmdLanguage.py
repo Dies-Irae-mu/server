@@ -374,7 +374,7 @@ class CmdLanguage(MuxCommand):
                 "German", "Greek", "Hungarian", "Icelandic", "Irish", "Italian", "Latvian",
                 "Lithuanian", "Macedonian", "Maltese", "Moldovan", "Montenegrin", "Norwegian",
                 "Polish", "Portuguese", "Romanian", "Russian", "Serbian", "Slovak", "Slovenian",
-                "Swedish", "Ukrainian"
+                "Swedish", "Ukrainian", "Haitian Creole"
             ],
             "Asian Languages": [
                 "Burmese", "Bengali", "Mandarin", "Cantonese", "Gujarati", "Malay", 
