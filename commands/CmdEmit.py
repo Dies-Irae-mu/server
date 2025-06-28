@@ -74,42 +74,23 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
         self.send_pose_break()
 
         if 'language' in self.switches:
-            # With /language switch, treat all quoted speech as being in the set language
+            # The entire emit is in the set language
             speaking_language = caller.get_speaking_language()
-            
+            _, msg_understand, msg_not_understand, _ = caller.prepare_say(processed_args, language_only=True, skip_english=True)
+
             for receiver in filtered_receivers:
-                # Check for Universal Language merit
-                has_universal = False
-                if hasattr(receiver, 'db') and receiver.db.stats:
-                    for category in receiver.db.stats.get('merits', {}).values():
-                        if isinstance(category, dict):
-                            for merit in category.keys():
-                                if merit.lower().replace(' ', '') == 'universallanguage':
-                                    has_universal = True
-                                    break
+                has_universal = any(
+                    merit.lower().replace(' ', '') == 'universallanguage'
+                    for category in receiver.db.stats.get('merits', {}).values()
+                    for merit in category.keys()
+                )
                 
-                # Check if receiver understands the language
-                understands_language = (receiver == caller or 
-                                      has_universal or 
-                                      (hasattr(receiver, 'get_languages') and 
-                                       speaking_language in receiver.get_languages()))
-                
-                if understands_language:
-                    # They understand - show original message
-                    receiver.msg(processed_args)
+                if receiver == caller or has_universal or speaking_language in receiver.get_languages():
+                    receiver.msg(msg_understand)
                 else:
-                    # They don't understand - process quoted speech
-                    message = processed_args
-                    # Simple replacement of quoted text
-                    import re
-                    quote_pattern = r'"([^"]*)"'
-                    def replace_quote(match):
-                        return '"<< something in ' + speaking_language + ' >>"'
-                    
-                    processed_message = re.sub(quote_pattern, replace_quote, message)
-                    receiver.msg(processed_message)
+                    receiver.msg(msg_not_understand)
         else:
-            # Handle mixed language content (original ~ system)
+            # Handle mixed language content
             for receiver in filtered_receivers:
                 if "~" in processed_args:
                     parts = []
@@ -120,6 +101,7 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
                         
                         # Process the speech
                         speech = match.group(1)
+                        _, msg_understand, msg_not_understand, _ = caller.prepare_say(speech, language_only=True, skip_english=True)
                         
                         # Check for Universal Language merit
                         has_universal = any(
@@ -130,10 +112,8 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
                         
                         speaking_language = caller.get_speaking_language()
                         if receiver == caller or has_universal or (speaking_language and speaking_language in receiver.get_languages()):
-                            _, msg_understand, _, _ = caller.prepare_say(speech, viewer=receiver, language_only=True, skip_english=True)
                             parts.append(f'"{msg_understand}"')
                         else:
-                            _, _, msg_not_understand, _ = caller.prepare_say(speech, viewer=receiver, language_only=True, skip_english=True)
                             parts.append(f'"{msg_not_understand}"')
                         
                         current_pos = match.end()
@@ -149,3 +129,5 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
 
         # Record scene activity
         caller.record_scene_activity()
+
+
