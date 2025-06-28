@@ -135,9 +135,9 @@ WEBSOCKET_ENABLED = True
 WEBCLIENT_ENABLED = True
 
 # SSL Configuration - Disabled for local development
-USE_SSL = False
-SSL_ENABLED = False
-WEBSOCKET_CLIENT_SSL = False
+USE_SSL = True
+SSL_ENABLED = True
+WEBSOCKET_CLIENT_SSL = True
 
 # Websocket specific settings
 WEBSOCKET_CLIENT_URL = "ws://localhost:4202/websocket"  # Development setting
@@ -150,12 +150,14 @@ WEBCLIENT_RECONNECT_DELAY = 2000
 WEBCLIENT_KEEPALIVE = True
 
 # Security settings - Simplified for development
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'https://diesiraemu.com', 'diesiraemu.com']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4005',
     'http://localhost:4000',
     'http://localhost:4202',
-    'ws://localhost:4202'
+    'ws://localhost:4202',
+    'https://diesiraemu.com',
+    'diesiraemu.com'
 ]
 
 # Use SQLite3 for local development
