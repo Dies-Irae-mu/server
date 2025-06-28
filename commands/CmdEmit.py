@@ -85,11 +85,21 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
                 )
                 
                 if receiver == caller or has_universal or speaking_language in receiver.get_languages():
-                    _, msg_understand, _, _ = caller.prepare_say(processed_args, viewer=receiver, language_only=True, skip_english=True)
-                    receiver.msg(msg_understand)
+                    # For those who understand, show the original message
+                    receiver.msg(processed_args)
                 else:
-                    _, _, msg_not_understand, _ = caller.prepare_say(processed_args, viewer=receiver, language_only=True, skip_english=True)
-                    receiver.msg(msg_not_understand)
+                    # For those who don't understand, use prepare_say to get the garbled version
+                    result = caller.prepare_say(processed_args, viewer=receiver, language_only=True, skip_english=True)
+                    if isinstance(result, tuple) and len(result) >= 3:
+                        _, _, msg_not_understand, _ = result
+                        if msg_not_understand:
+                            receiver.msg(msg_not_understand)
+                        else:
+                            # Fallback if prepare_say doesn't return expected result
+                            receiver.msg(f"|y<< something in {speaking_language} >>|n")
+                    else:
+                        # Fallback if prepare_say doesn't return expected result
+                        receiver.msg(f"|y<< something in {speaking_language} >>|n")
         else:
             # Handle mixed language content
             for receiver in filtered_receivers:
