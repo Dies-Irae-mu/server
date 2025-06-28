@@ -3,14 +3,14 @@ LANGUAGE_CATEGORIES = {
         "english": "English",
         "spanish": "Spanish",
         "tagalog": "Tagalog",
-        "chinese": "Chinese",
         "vietnamese": "Vietnamese",
         "korean": "Korean",
         "japanese": "Japanese",
         "khmer": "Khmer",
         "hmong": "Hmong",
         "thai": "Thai",
-        "lao": "Lao"
+        "lao": "Lao",
+        "american sign language": "American Sign Language"
     },
     "African Languages": {
         "amharic": "Amharic",
@@ -55,6 +55,7 @@ LANGUAGE_CATEGORIES = {
         "greek": "Greek",
         "french": "French",
         "german": "German",
+        "haitian creole": "Haitian Creole",
         "italian": "Italian",
         "hungarian": "Hungarian",
         "norwegian": "Norwegian",
