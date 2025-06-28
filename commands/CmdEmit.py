@@ -76,8 +76,7 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
         if 'language' in self.switches:
             # The entire emit is in the set language
             speaking_language = caller.get_speaking_language()
-            _, msg_understand, msg_not_understand, _ = caller.prepare_say(processed_args, language_only=True, skip_english=True)
-
+            
             for receiver in filtered_receivers:
                 has_universal = any(
                     merit.lower().replace(' ', '') == 'universallanguage'
@@ -86,8 +85,10 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
                 )
                 
                 if receiver == caller or has_universal or speaking_language in receiver.get_languages():
+                    _, msg_understand, _, _ = caller.prepare_say(processed_args, viewer=receiver, language_only=True, skip_english=True)
                     receiver.msg(msg_understand)
                 else:
+                    _, _, msg_not_understand, _ = caller.prepare_say(processed_args, viewer=receiver, language_only=True, skip_english=True)
                     receiver.msg(msg_not_understand)
         else:
             # Handle mixed language content
@@ -101,7 +102,6 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
                         
                         # Process the speech
                         speech = match.group(1)
-                        _, msg_understand, msg_not_understand, _ = caller.prepare_say(speech, language_only=True, skip_english=True)
                         
                         # Check for Universal Language merit
                         has_universal = any(
@@ -112,8 +112,10 @@ class CmdEmit(PoseBreakMixin, default_cmds.MuxCommand):
                         
                         speaking_language = caller.get_speaking_language()
                         if receiver == caller or has_universal or (speaking_language and speaking_language in receiver.get_languages()):
+                            _, msg_understand, _, _ = caller.prepare_say(speech, viewer=receiver, language_only=True, skip_english=True)
                             parts.append(f'"{msg_understand}"')
                         else:
+                            _, _, msg_not_understand, _ = caller.prepare_say(speech, viewer=receiver, language_only=True, skip_english=True)
                             parts.append(f'"{msg_not_understand}"')
                         
                         current_pos = match.end()
