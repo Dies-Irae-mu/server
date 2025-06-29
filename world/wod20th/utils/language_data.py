@@ -65,7 +65,7 @@ LANGUAGE_CATEGORIES = {
         "swedish": "Swedish",
         "ukrainian": "Ukrainian",
         "albanian": "Albanian",
-        "armenian": "Armenian",
+        "armenian": "Armenian",  # Keep in European Languages
         "azerbaijani": "Azerbaijani",
         "belarusian": "Belarusian",
         "estonian": "Estonian",
@@ -98,7 +98,7 @@ LANGUAGE_CATEGORIES = {
         "arabic": "Arabic",
         "hebrew": "Hebrew",
         "kurdish": "Kurdish",
-        "armenian": "Armenian",
+        # "armenian": "Armenian",  # Removed duplicate - kept in European Languages
         "syriac": "Syriac",
         "pashto": "Pashto",
         "turkish": "Turkish",
@@ -162,3 +162,60 @@ LANGUAGE_CATEGORIES = {
 AVAILABLE_LANGUAGES = {}
 for category in LANGUAGE_CATEGORIES.values():
     AVAILABLE_LANGUAGES.update(category)
+
+# Create a case-insensitive lookup dictionary for validation
+AVAILABLE_LANGUAGES_LOWER = {key.lower(): value for key, value in AVAILABLE_LANGUAGES.items()}
+
+def is_valid_language(language_name):
+    """
+    Check if a language name is valid (case-insensitive).
+    
+    Args:
+        language_name (str): The language name to check
+        
+    Returns:
+        tuple: (is_valid, actual_key, display_name) or (False, None, None)
+    """
+    if not language_name:
+        return False, None, None
+    
+    language_lower = language_name.lower().strip()
+    
+    # Check exact match first
+    if language_lower in AVAILABLE_LANGUAGES_LOWER:
+        actual_key = language_lower
+        display_name = AVAILABLE_LANGUAGES_LOWER[language_lower]
+        return True, actual_key, display_name
+    
+    # Check for partial matches (for user-friendly input)
+    for key, display_name in AVAILABLE_LANGUAGES_LOWER.items():
+        if language_lower in key or key in language_lower:
+            return True, key, display_name
+    
+    return False, None, None
+
+def get_language_key(language_name):
+    """
+    Get the standardized key for a language name.
+    
+    Args:
+        language_name (str): The language name
+        
+    Returns:
+        str: The standardized key or None if not found
+    """
+    is_valid, key, _ = is_valid_language(language_name)
+    return key if is_valid else None
+
+def get_language_display_name(language_name):
+    """
+    Get the display name for a language.
+    
+    Args:
+        language_name (str): The language name
+        
+    Returns:
+        str: The display name or None if not found
+    """
+    is_valid, _, display_name = is_valid_language(language_name)
+    return display_name if is_valid else None
