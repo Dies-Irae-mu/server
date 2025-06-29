@@ -150,14 +150,17 @@ WEBCLIENT_RECONNECT_DELAY = 2000
 WEBCLIENT_KEEPALIVE = True
 
 # Security settings - Simplified for development
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'https://diesiraemu.com', 'diesiraemu.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'diesiraemu.com']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4005',
     'http://localhost:4000',
     'http://localhost:4202',
     'ws://localhost:4202',
     'https://diesiraemu.com',
-    'diesiraemu.com'
+    'https://diesiraemu.com:4200',
+    'https://diesiraemu.com:4005',
+    'https://diesiraemu.com:4000',
+    'ws://diesiraemu.com:4202'
 ]
 
 # Use SQLite3 for local development
