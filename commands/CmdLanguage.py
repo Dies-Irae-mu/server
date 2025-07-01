@@ -358,7 +358,7 @@ class CmdLanguage(MuxCommand):
         # Define categories and their languages
         categories = {
             "San Diego Common Languages": [
-                "English", "Spanish", "Tagalog", "Chinese", "Vietnamese", "Korean", "Japanese", 
+                "English", "Spanish", "Tagalog", "American Sign Language", "Vietnamese", "Korean", "Japanese", 
                 "Khmer", "Hmong", "Thai", "Lao"
             ],
             "African Languages": [
@@ -371,7 +371,7 @@ class CmdLanguage(MuxCommand):
             "European Languages": [
                 "Albanian", "Armenian", "Azerbaijani", "Belarusian", "Bosnian", "Bulgarian",
                 "Croatian", "Czech", "Danish", "Dutch", "Estonian", "Finnish", "French",
-                "German", "Greek", "Hungarian", "Icelandic", "Irish", "Italian", "Latvian",
+                "German", "Greek", "Hungarian", "Haitian Creole", "Icelandic", "Irish", "Italian", "Latvian",
                 "Lithuanian", "Macedonian", "Maltese", "Moldovan", "Montenegrin", "Norwegian",
                 "Polish", "Portuguese", "Romanian", "Russian", "Serbian", "Slovak", "Slovenian",
                 "Swedish", "Ukrainian"
