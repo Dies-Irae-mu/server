@@ -173,9 +173,7 @@ class Character(DefaultCharacter):
                     def message(obj, from_obj):
                         obj.msg(disconnect_msg, from_obj=from_obj)
                     self.location.for_contents(message, exclude=[self], from_obj=self)
-                
-                self.db.prelogout_location = self.location
-                self.location = None
+            
                 
             # Store the current time as the last disconnect time
             from time import time
