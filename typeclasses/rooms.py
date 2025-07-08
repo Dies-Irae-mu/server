@@ -154,27 +154,27 @@ class RoomParent(DefaultRoom):
                 string += f"{name_part}{idle_part} {ANSIString(shortdesc_str)}\n"
 
         # List all objects in the room that are in the same reality layer
-        objects = []
-        for obj in self.contents:
-            if not obj.has_account and not obj.destination and not obj.is_character:
-                # Check if object is visible in current reality layer
-                # If object has no reality layer tags, assume it's in material plane
-                is_in_material = not (obj.tags.get("in_umbra", category="state") or 
-                                    obj.tags.get("in_dreaming", category="state"))
-                
-                if ((looker.tags.get("in_umbra", category="state") and obj.tags.get("in_umbra", category="state")) or
-                    (looker.tags.get("in_material", category="state") and (obj.tags.get("in_material", category="state") or is_in_material)) or
-                    (looker.tags.get("in_dreaming", category="state") and obj.tags.get("in_dreaming", category="state"))):
-                    objects.append(obj)
+        #objects = []
+        #for obj in self.contents:
+        #    if not obj.has_account and not obj.destination:
+         #       # Check if object is visible in current reality layer
+          #      # If object has no reality layer tags, assume it's in material plane
+           #     is_in_material = not (obj.tags.get("in_umbra", category="state") or 
+            #                        obj.tags.get("in_dreaming", category="state"))
+             #   
+              #  if ((looker.tags.get("in_umbra", category="state") and obj.tags.get("in_umbra", category="state")) or
+               #     (looker.tags.get("in_material", category="state") and (obj.tags.get("in_material", category="state") or is_in_material)) or
+                #    (looker.tags.get("in_dreaming", category="state") and obj.tags.get("in_dreaming", category="state"))):
+                 #   objects.append(obj)
 
-        if objects:
-            string += divider("Objects", width=78, fillchar=ANSIString(f"{border_color}-|n")) + "\n"
-            for obj in objects:
-                if obj.db.shortdesc:
-                    shortdesc = obj.db.shortdesc
-                else:
-                    shortdesc = ""
-                string += " " + ANSIString(f"{obj.get_display_name(looker)}").ljust(25) + ANSIString(f"{shortdesc}").ljust(53, ' ') + "\n"
+        #if objects:
+        #    string += divider("Objects", width=78, fillchar=ANSIString(f"{border_color}-|n")) + "\n"
+        #    for obj in objects:
+        #        if obj.db.shortdesc:
+        #            shortdesc = obj.db.shortdesc
+        #        else:
+        #            shortdesc = ""
+        #        string += " " + ANSIString(f"{obj.get_display_name(looker)}").ljust(25) + ANSIString(f"{shortdesc}").ljust(53, ' ') + "\n"
 
         # List all NPCs in the room
         npcs = []
